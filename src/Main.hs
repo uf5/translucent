@@ -20,7 +20,7 @@ main = do
           _ -> do
             let parsed = readScript s
             print parsed
-            let translated = (transExpr . head) parsed
+            let translated = map transStmt parsed
             print translated
             I.writeFile "out.json" (encodeToLazyText translated)
             repl
