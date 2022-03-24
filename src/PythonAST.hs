@@ -29,14 +29,14 @@ data Statement
 data Expression
   = Constant {value :: Const}
   | Name {id :: String, ctx :: ExpressionContext}
-  | BinOp {left :: Expression, op :: Operator, right :: Expression}
+  | BinOp {left :: Expression, op :: BinaryOperator, right :: Expression}
   | Call {func :: Expression, args :: [Expression], keywords :: [Keyword]}
   | List {elts :: [Expression], ctx :: ExpressionContext}
   | Tuple {elts :: [Expression], ctx :: ExpressionContext}
   | IfExp {test :: Expression, body :: Expression, orelse :: Expression}
   deriving (Eq, Show, Generic)
 
-data Operator
+data BinaryOperator
   = Add
   | Sub
   | Mult
@@ -50,7 +50,7 @@ data Operator
   | BitXor
   | BitAnd
   | FloorDiv
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, Data)
 
 data ExpressionContext = Load | Store | Del
   deriving (Eq, Show, Generic, Data)

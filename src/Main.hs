@@ -12,7 +12,7 @@ main :: IO ()
 main = do
   args <- getArgs
   let repl = do
-        putStr "trans>"
+        putStr "trans> "
         hFlush stdout
         s <- getLine
         case s of

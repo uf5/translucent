@@ -23,10 +23,11 @@ instance ToJSON P.Statement
 
 instance ToJSON P.Expression
 
-instance ToJSON P.Operator
-
 instance ToJSON P.ExpressionContext where
-  toJSON = constToTag
+  toJSON = dataToTag
 
-constToTag :: (Data a) => a -> Value
-constToTag x = object ["tag" .= showConstr (toConstr x)]
+instance ToJSON P.BinaryOperator where
+  toJSON = dataToTag
+
+dataToTag :: (Data a) => a -> Value
+dataToTag x = object ["tag" .= showConstr (toConstr x)]
