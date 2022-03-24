@@ -28,4 +28,7 @@ if __name__ == "__main__":
         print(ast.dump(a))
         print("RECONSTRUCTED:")
         print(ast.unparse(a))
+        print("BEGIN EVALUATION")
+        eval(compile(ast.fix_missing_locations(a), "", "exec"))
+        print("END EVALUATION")
 

@@ -17,6 +17,7 @@ executable translucent
   hs-source-dirs:      src
   main-is:             Main.hs
   other-modules:       PythonAST
+               ,       AstJson
                ,       Types
                ,       Parser
                ,       Trans

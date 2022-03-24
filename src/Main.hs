@@ -1,5 +1,6 @@
 module Main where
 
+import AstJson
 import Data.Aeson.Text (encodeToLazyText)
 import qualified Data.Text.Lazy.IO as I
 import Parser
@@ -20,7 +21,7 @@ main = do
           _ -> do
             let parsed = readScript s
             print parsed
-            let translated = map transStmt parsed
+            let translated = transModule parsed
             print translated
             I.writeFile "out.json" (encodeToLazyText translated)
             repl

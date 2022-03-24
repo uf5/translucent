@@ -1,20 +1,17 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
 module PythonAST where
 
-import qualified Data.Aeson as A
-import GHC.Generics
+import Data.Data (Data)
+import GHC.Generics (Generic)
 
-newtype PyModule = PyModule {body :: [Statement]}
+data Module = Module {body :: [Statement], type_ignores :: [String]}
   deriving (Eq, Show, Generic)
-
-instance A.ToJSON PyModule
 
 data Keyword = Keyword {args :: String, value :: Expression}
   deriving (Eq, Show, Generic)
-
-instance A.ToJSON Keyword
 
 data Const
   = None
@@ -24,30 +21,20 @@ data Const
   | String String
   deriving (Eq, Show, Generic)
 
-instance A.ToJSON Const where
-  toJSON None = A.Null
-  toJSON (Bool v) = A.toJSON v
-  toJSON (Int v) = A.toJSON v
-  toJSON (Float v) = A.toJSON v
-  toJSON (String v) = A.toJSON v
-
 data Statement
-  = Expression {value :: Expression}
+  = Expr {value :: Expression}
   | If {test :: Expression, body :: [Statement], orelse :: [Statement]}
   deriving (Eq, Show, Generic)
 
-instance A.ToJSON Statement
-
 data Expression
   = Constant {value :: Const}
-  | Name {id :: String, exp_context :: ExpressionContext}
+  | Name {id :: String, ctx :: ExpressionContext}
   | BinOp {left :: Expression, op :: Operator, right :: Expression}
   | Call {func :: Expression, args :: [Expression], keywords :: [Keyword]}
   | List {elts :: [Expression], ctx :: ExpressionContext}
   | Tuple {elts :: [Expression], ctx :: ExpressionContext}
+  | IfExp {test :: Expression, body :: Expression, orelse :: Expression}
   deriving (Eq, Show, Generic)
-
-instance A.ToJSON Expression
 
 data Operator
   = Add
@@ -65,9 +52,5 @@ data Operator
   | FloorDiv
   deriving (Eq, Show, Generic)
 
-instance A.ToJSON Operator
-
 data ExpressionContext = Load | Store | Del
-  deriving (Eq, Show, Generic)
-
-instance A.ToJSON ExpressionContext
+  deriving (Eq, Show, Generic, Data)

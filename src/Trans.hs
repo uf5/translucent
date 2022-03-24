@@ -13,20 +13,23 @@ sexpStmtForms =
     )
   ]
 
+sexpExprForms :: [(String, [LispVal] -> Expression)]
+sexpExprForms =
+  [ ( "if",
+      \[test, body, orelse] -> P.IfExp (trans test) (trans body) (trans orelse)
+    )
+  ]
 
 class Translate a where
   trans :: LispVal -> a
 
 instance Translate Statement where
   trans (T.SExp v) = do
-    let nameSymbol : args = v
-    let name = case nameSymbol of
-          (T.Symbol v) -> v
-          _ -> error "Wrong S-Expression syntax"
-    case lookup name sexpStmtForms of
-      (Just form) -> form args
-      Nothing -> (P.Expression . trans . T.SExp) v
-  trans v = (P.Expression . trans) v
+    let h : t = v
+    case tryGetForm h sexpStmtForms of
+      (Just form) -> form t
+      Nothing -> (P.Expr . trans . T.SExp) v
+  trans v = (P.Expr . trans) v
 
 instance Translate Expression where
   trans T.None = Constant P.None
@@ -38,12 +41,24 @@ instance Translate Expression where
   trans (T.Tuple v) = P.Tuple (map trans v) P.Load
   trans (T.List v) = P.List (map trans v) P.Load
   trans (T.SExp v) = do
-    let func : args = map trans v
-    P.Call func args []
+    let h : t = v
+    case tryGetForm h sexpExprForms of
+      (Just form) -> form t
+      Nothing -> P.Call (trans h) (map trans t) []
   trans e = error ("Lisp expression: " ++ show e ++ " is not yet implemented")
+
+tryGetForm :: Translate a => LispVal -> [(String, [LispVal] -> a)] -> Maybe ([LispVal] -> a)
+tryGetForm (T.Symbol v) forms =
+  case lookup v forms of
+    Nothing -> Nothing
+    v -> v
+tryGetForm _ _ = Nothing
 
 transExpr :: LispVal -> P.Expression
 transExpr = trans
 
 transStmt :: LispVal -> P.Statement
 transStmt = trans
+
+transModule :: [LispVal] -> P.Module
+transModule = (`P.Module` []) . map transStmt
