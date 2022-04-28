@@ -26,6 +26,23 @@ instance ToJSON P.Expression
 instance ToJSON P.ExpressionContext where
   toJSON = dataToTag
 
+instance ToJSON P.Arguments where
+  toJSON (P.Arguments posonlyargs args vararg kwonlyargs kw_defaults kwarg defaults) =
+    object
+      [ "tag" .= String "arguments",
+        "posonlyargs" .= posonlyargs,
+        "args" .= args,
+        "vararg" .= vararg,
+        "kwonlyargs" .= kwonlyargs,
+        "kw_defaults" .= kw_defaults,
+        "kwarg" .= kwarg,
+        "defaults" .= defaults
+      ]
+
+instance ToJSON P.Arg where
+  toJSON (P.Arg arg annotation typeComment) =
+    object ["tag" .= String "arg", "arg" .= arg, "annotation" .= annotation, "type_comment" .= typeComment]
+
 instance ToJSON P.BinaryOperator where
   toJSON = dataToTag
 

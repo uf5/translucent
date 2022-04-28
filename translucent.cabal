@@ -1,29 +1,40 @@
-name:                translucent
-version:             0.1.0.0
--- synopsis:
--- description:
-homepage:            https://github.com/githubuser/translucent#readme
-license:             BSD3
-license-file:        LICENSE
-author:              Author name here
-maintainer:          example@example.com
-copyright:           2022 Author name here
-category:            Web
-build-type:          Simple
-cabal-version:       >=1.10
-extra-source-files:  README.md
+cabal-version:      >=1.10
+name:               translucent
+version:            0.1.0.0
+license:            BSD3
+copyright:          2022 Author name here
+maintainer:         example@example.com
+author:             Author name here
+homepage:           https://github.com/uf5/translucent
+category:           Web
+build-type:         Simple
+extra-source-files: README.md
 
-executable translucent
-  hs-source-dirs:      src
-  main-is:             Main.hs
-  other-modules:       PythonAST
-               ,       AstJson
-               ,       Types
-               ,       Parser
-               ,       Trans
-  default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5
-               ,       parsec >= 3.1.15
-               ,       mtl >= 2.2.2
-               ,       aeson >= 2.0.3.0
-               ,       text >= 2.0
+library
+    exposed-modules:  Lib
+    hs-source-dirs:   src
+    other-modules:
+        AstJson
+        Parser
+        PythonAST
+        Result
+        Trans
+        Types
+        Util
+
+    default-language: Haskell2010
+    build-depends:
+        aeson >=2.0.3.0,
+        base >=4.7 && <5,
+        mtl >=2.2.2,
+        parsec >=3.1.15
+
+executable translucent-exe
+    main-is:          Main.hs
+    hs-source-dirs:   app
+    default-language: Haskell2010
+    build-depends:
+        aeson >=2.0.3.0,
+        base >=4.7 && <5,
+        text >=2.0,
+        translucent

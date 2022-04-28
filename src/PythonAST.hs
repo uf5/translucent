@@ -23,7 +23,17 @@ data Const
 
 data Statement
   = Expr {value :: Expression}
+  | Return {value :: Expression}
   | If {test :: Expression, body :: [Statement], orelse :: [Statement]}
+  | FunctionDef
+      { name :: String,
+        args :: Arguments,
+        body :: [Statement],
+        decorator_list :: [Expression],
+        returns :: Maybe Expression,
+        type_comment :: Maybe String
+      }
+  | Pass
   deriving (Eq, Show, Generic)
 
 data Expression
@@ -34,6 +44,20 @@ data Expression
   | List {elts :: [Expression], ctx :: ExpressionContext}
   | Tuple {elts :: [Expression], ctx :: ExpressionContext}
   | IfExp {test :: Expression, body :: Expression, orelse :: Expression}
+  deriving (Eq, Show, Generic)
+
+data Arguments = Arguments
+  { posonlyargs :: [Arg],
+    args :: [Arg],
+    vararg :: Maybe Arg,
+    kwonlyargs :: [Arg],
+    kw_defaults :: [Expression],
+    kwarg :: Maybe Arg,
+    defaults :: [Expression]
+  }
+  deriving (Eq, Show, Generic)
+
+data Arg = Arg {arg :: String, annotation :: Maybe Expression, type_comment :: Maybe String}
   deriving (Eq, Show, Generic)
 
 data BinaryOperator

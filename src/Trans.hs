@@ -1,81 +1,42 @@
-{-# LANGUAGE ExistentialQuantification #-}
+module Trans (transModule) where
 
-module Trans where
-
-import Control.Monad
+import Control.Monad.State
 import PythonAST as P
+import Result
 import Types as T
 
-newtype Forms a = Forms [(String, a)]
-
-sexpStmtForms :: Forms ([LispVal] -> Statement)
-sexpStmtForms =
-  Forms
-    [ ( "if",
-        \[test, body, orelse] -> P.If (trans test) [trans body] [trans orelse]
+forms :: [(String, [LispVal] -> Result)]
+forms =
+  [ ( "do",
+      foldl1 (+++) . map trans
+    ),
+    ( "if",
+      ( \[x, y, z] -> do
+          cond <- sub x
+          modify (++ [If cond (block y) (block z)])
+          return $ Constant P.None
       )
-    ]
+        . map trans
+    )
+  ]
 
-sexpExprForms :: Forms ([Expression] -> Expression)
-sexpExprForms =
-  Forms
-    [ ( "if",
-        \[test, body, orelse] -> P.IfExp test body orelse
-      ),
-      ( "+",
-        \[a, b] -> P.BinOp a P.Add b
-      ),
-      ( "-",
-        \[a, b] -> P.BinOp a P.Sub b
-      ),
-      ( "*",
-        \[a, b] -> P.BinOp a P.Mult b
-      ),
-      ( "/",
-        \[a, b] -> P.BinOp a P.Div b
-      )
-    ]
-
-class Translate a where
-  trans :: LispVal -> a
-
-instance Translate Statement where
-  trans (T.SExp v) = do
-    let h : t = v
-    case tryGetForm h sexpStmtForms of
-      (Just form) -> form t
-      Nothing -> (P.Expr . trans . T.SExp) v
-  trans v = (P.Expr . trans) v
-
-instance Translate Expression where
-  trans T.None = Constant P.None
-  trans (T.Bool v) = (Constant . P.Bool) v
-  trans (T.Int v) = (Constant . P.Int) v
-  trans (T.Float v) = (Constant . P.Float) v
-  trans (T.String v) = (Constant . P.String) v
-  trans (T.Symbol v) = P.Name v P.Load
-  trans (T.Tuple v) = P.Tuple (map trans v) P.Load
-  trans (T.List v) = P.List (map trans v) P.Load
-  trans (T.SExp v) = do
-    let h = head v
-    let t = map trans (tail v)
-    case tryGetForm h sexpExprForms of
-      (Just form) -> form t
-      Nothing -> P.Call (trans h) t []
-  trans e = error ("Lisp expression: " ++ show e ++ " is not yet implemented")
-
-tryGetForm :: LispVal -> Forms a -> Maybe a
-tryGetForm (T.Symbol v) (Forms f) =
-  case lookup v f of
-    Nothing -> Nothing
-    v -> v
-tryGetForm _ _ = Nothing
-
-transExpr :: LispVal -> P.Expression
-transExpr = trans
-
-transStmt :: LispVal -> P.Statement
-transStmt = trans
+trans :: LispVal -> Result
+trans T.None = return $ Constant P.None
+trans (T.Bool x) = return $ Constant $ P.Bool x
+trans (T.Int x) = return $ Constant $ P.Int x
+trans (T.Float x) = return $ Constant $ P.Float x
+trans (T.String x) = return $ Constant $ P.String x
+trans (T.Symbol x) = return $ P.Name x P.Load
+trans (T.SExp (h : t)) = case checkForm of
+  (Just form) -> form t
+  Nothing -> do
+    fn <- sub $ trans h
+    return $ Call fn [] []
+  where
+    checkForm = case h of
+      (T.Symbol x) -> lookup x forms
+      _ -> Nothing
+trans x = error $ "unknown expression: " ++ show x
 
 transModule :: [LispVal] -> P.Module
-transModule = (`P.Module` []) . map transStmt
+transModule x = P.Module (block $ foldl1 (+++) $ map trans x) []

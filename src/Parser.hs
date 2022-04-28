@@ -1,17 +1,17 @@
 module Parser (readScript) where
 
-import Numeric (readFloat)
 import Text.ParserCombinators.Parsec
 import Types
+import Util
 
 allowedChar :: Parser Char
-allowedChar = noneOf "\n\r \"();[\\]{}"
+allowedChar = noneOf "\n\r \"#(),;[\\]{}"
 
 sep :: Parser String
 sep = many $ oneOf " \n" <|> char ';' <* many (noneOf "\n")
 
 parseSeq :: Char -> Char -> Parser [LispVal]
-parseSeq open close = char open *> sep *> many (form <* sep) <* char close
+parseSeq open close = char open *> sep *> many (expr <* sep) <* char close
 
 stringChar :: Parser Char
 stringChar = escapeChar <$> (char '\\' *> anyChar) <|> noneOf "\""
@@ -19,11 +19,11 @@ stringChar = escapeChar <$> (char '\\' *> anyChar) <|> noneOf "\""
 escapeChar :: Char -> Char
 escapeChar 'n' = '\n'
 escapeChar 'r' = '\r'
-escapeChar x = x
+escapeChar x = error ("Unknown escape character: " ++ show x)
 
-form :: Parser LispVal
-form =
-  (String <$> (char '"' *> many stringChar <* char '"'))
+expr :: Parser LispVal
+expr =
+  sep *> (String <$> (char '"' *> many stringChar <* char '"'))
     <|> (Keyword <$> (char ':' *> many1 allowedChar))
     <|> try
       ( Float . read <$> do
@@ -33,19 +33,13 @@ form =
           return $ x ++ "." ++ y
       )
     <|> (Int . read <$> many1 digit)
-    <|> try (Tuple <$> (char '(' *> sep *> parseSeq ',' ')'))
     <|> (SExp <$> parseSeq '(' ')')
     <|> (List <$> parseSeq '[' ']')
     <|> (Set <$> parseSeq '{' '}')
-    <|> (prefix "quote" <$> (char '\'' *> sep *> form))
-    <|> (prefix "quasiquote" <$> (char '`' *> sep *> form))
+    <|> (hashed <$> (char '#' *> expr))
+    <|> (prefix "quote" <$> (char '\'' *> expr))
+    <|> (prefix "quasiquote" <$> (char '`' *> expr))
     <|> (symbol <$> many1 allowedChar)
-
-readForm :: Parser LispVal
-readForm = sep *> form
-
-prefix :: String -> LispVal -> LispVal
-prefix x y = SExp [Symbol x, y]
 
 symbol :: String -> LispVal
 symbol "True" = Bool True
@@ -53,7 +47,16 @@ symbol "False" = Bool False
 symbol "None" = None
 symbol x = Symbol x
 
+hashed :: LispVal -> LispVal
+hashed (SExp values) = Tuple values
+hashed exp = error $ "unknown hashed expression: " ++ show exp
+
+readExpr :: String -> LispVal
+readExpr s = case parse expr "lisp" s of
+  Left err -> error $ show err
+  Right val -> val
+
 readScript :: String -> [LispVal]
-readScript s = case parse (many readForm) "Lisp" s of
+readScript s = case parse (many expr) "lisp" s of
   Left err -> (error . show) err
   Right val -> val

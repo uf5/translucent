@@ -7,6 +7,9 @@ def gen_ast(obj):
         case int(x) | float(x) | str(x):
             return x
 
+        case None:
+            return None
+
         case list(x):
             return [gen_ast(e) for e in x]
 
@@ -23,12 +26,12 @@ if __name__ == "__main__":
     with open(sys.argv[1], "r") as json_file:
         ast_json = json.load(json_file)
         print(ast_json)
-        a = gen_ast(ast_json)
+        a = ast.fix_missing_locations(gen_ast(ast_json))
         print("AST:")
         print(ast.dump(a))
         print("RECONSTRUCTED:")
         print(ast.unparse(a))
         print("BEGIN EVALUATION")
-        eval(compile(ast.fix_missing_locations(a), "", "exec"))
+        eval(compile(a, "", "exec"))
         print("END EVALUATION")
 
