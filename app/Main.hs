@@ -18,7 +18,9 @@ main = do
           _ -> do
             let parsed = readScript s
             print parsed
-            let translated = transModule parsed
+            let expanded = expandModule parsed
+            print expanded
+            let translated = transModule expanded
             print translated
             I.writeFile "out.json" (encodeToLazyText translated)
             repl

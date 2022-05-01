@@ -15,6 +15,7 @@ library
     hs-source-dirs:   src
     other-modules:
         AstJson
+        Expansion
         Parser
         PythonAST
         Result

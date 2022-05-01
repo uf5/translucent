@@ -28,10 +28,10 @@ funcbody x = case runState x [] of
 
 (+++) :: Result -> Result -> Result
 a +++ b = do
-  let (e, s) = comb (runState a []) (runState b [])
+  let (e, s) =
+        ( let (e1, s1) = runState a []
+              (e2, s2) = runState b []
+           in (e2, s1 ++ [Expr e1] ++ s2)
+        )
   put s
   return e
-
--- TODO: ugly
-comb :: (Expression, [Statement]) -> (Expression, [Statement]) -> (Expression, [Statement])
-comb (e1, s1) (e2, s2) = (e2, s1 ++ [Expr e1] ++ s2)

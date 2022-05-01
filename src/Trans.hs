@@ -27,13 +27,13 @@ trans (T.Int x) = return $ Constant $ P.Int x
 trans (T.Float x) = return $ Constant $ P.Float x
 trans (T.String x) = return $ Constant $ P.String x
 trans (T.Symbol x) = return $ P.Name x P.Load
-trans (T.SExp (h : t)) = case checkForm of
+trans (T.SExp (h : t)) = case lookupForm of
   (Just form) -> form t
   Nothing -> do
     fn <- sub $ trans h
     return $ Call fn [] []
   where
-    checkForm = case h of
+    lookupForm = case h of
       (T.Symbol x) -> lookup x forms
       _ -> Nothing
 trans x = error $ "unknown expression: " ++ show x

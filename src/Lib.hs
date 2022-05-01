@@ -1,5 +1,6 @@
-module Lib (transModule, readScript) where
+module Lib (transModule, readScript, expandModule) where
 
-import Parser
 import AstJson
+import Expansion (expandModule)
+import Parser (readScript)
 import Trans (transModule)
