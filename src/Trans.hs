@@ -31,7 +31,8 @@ trans (T.SExp (h : t)) = case lookupForm of
   (Just form) -> form t
   Nothing -> do
     fn <- sub $ trans h
-    return $ Call fn [] []
+    args <- mapM (sub . trans) t
+    return $ Call fn args []
   where
     lookupForm = case h of
       (T.Symbol x) -> lookup x forms
