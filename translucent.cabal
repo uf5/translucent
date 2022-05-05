@@ -2,13 +2,8 @@ cabal-version:      >=1.10
 name:               translucent
 version:            0.1.0.0
 license:            BSD3
-copyright:          2022 Author name here
-maintainer:         example@example.com
-author:             Author name here
 homepage:           https://github.com/uf5/translucent
-category:           Web
 build-type:         Simple
-extra-source-files: README.md
 
 library
     exposed-modules:  Lib
