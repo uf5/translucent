@@ -32,5 +32,6 @@ executable translucent-exe
     build-depends:
         aeson >=2.0.3.0,
         base >=4.7 && <5,
+        haskeline >=0.8.2,
         text >=2.0,
         translucent
