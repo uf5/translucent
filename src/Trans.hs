@@ -1,7 +1,7 @@
 module Trans (transModule) where
 
 import Control.Monad.State
-import PythonAST as P
+import PythonAst as P
 import Result
 import Types as T
 

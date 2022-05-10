@@ -1,6 +1,7 @@
 module Lib (transModule, readScript, expandModule) where
 
+import PythonAst
 import AstJson
-import Expansion (expandModule)
-import Parser (readScript)
-import Trans (transModule)
+import Expansion
+import Parser
+import Trans

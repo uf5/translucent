@@ -3,7 +3,7 @@
 module Result (Result, sub, block, funcbody, (+++)) where
 
 import Control.Monad.State
-import PythonAST
+import PythonAst
 
 type Result = State [Statement] Expression
 

@@ -1,11 +1,25 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module AstJson where
 
 import Data.Aeson
 import Data.Data
 import GHC.Generics (Generic)
-import qualified PythonAST as P
+import JsonTemplate
+import qualified PythonAst as P
+
+jsonFields
+  ''P.Expression
+  [ ('P.Constant, ["value"]),
+    ('P.Name, ["id", "ctx"]),
+    ('P.BinOp, ["left", "op", "right"]),
+    ('P.Compare, ["left", "op", "right"]),
+    ('P.Call, ["func", "args", "kwords"]),
+    ('P.List, ["elts", "ctx"]),
+    ('P.Tuple, ["elts", "ctx"]),
+    ('P.IfExp, ["test", "body", "orelse"])
+  ]
 
 instance ToJSON P.Module where
   toJSON (P.Module body type_ignores) = object ["tag" .= String "Module", "body" .= body, "type_ignores" .= type_ignores]
@@ -20,8 +34,6 @@ instance ToJSON P.Const where
   toJSON (P.String v) = toJSON v
 
 instance ToJSON P.Statement
-
-instance ToJSON P.Expression
 
 instance ToJSON P.ExpressionContext where
   toJSON = dataToTag
@@ -44,6 +56,9 @@ instance ToJSON P.Arg where
     object ["tag" .= String "arg", "arg" .= arg, "annotation" .= annotation, "type_comment" .= typeComment]
 
 instance ToJSON P.BinaryOperator where
+  toJSON = dataToTag
+
+instance ToJSON P.CmpOp where
   toJSON = dataToTag
 
 dataToTag :: (Data a) => a -> Value

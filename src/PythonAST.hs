@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
-module PythonAST where
+module PythonAst where
 
 import Data.Data (Data)
 import GHC.Generics (Generic)
@@ -40,6 +40,7 @@ data Expression
   = Constant {value :: Const}
   | Name {id :: String, ctx :: ExpressionContext}
   | BinOp {left :: Expression, op :: BinaryOperator, right :: Expression}
+  | Compare {left :: Expression, op_ :: CmpOp, right :: Expression}
   | Call {func :: Expression, args :: [Expression], keywords :: [Keyword]}
   | List {elts :: [Expression], ctx :: ExpressionContext}
   | Tuple {elts :: [Expression], ctx :: ExpressionContext}
@@ -74,6 +75,19 @@ data BinaryOperator
   | BitXor
   | BitAnd
   | FloorDiv
+  deriving (Eq, Show, Generic, Data)
+
+data CmpOp
+  = Eq
+  | NotEq
+  | Lt
+  | LtE
+  | Gt
+  | GtE
+  | Is
+  | IsNot
+  | In
+  | NotIn
   deriving (Eq, Show, Generic, Data)
 
 data ExpressionContext = Load | Store | Del
