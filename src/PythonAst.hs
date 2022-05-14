@@ -7,10 +7,10 @@ module PythonAst where
 import Data.Data (Data)
 import GHC.Generics (Generic)
 
-data Module = Module {body :: [Statement], type_ignores :: [String]}
+data Module = Module [Statement] [String]
   deriving (Eq, Show, Generic)
 
-data Keyword = Keyword {args :: String, value :: Expression}
+data Keyword = Keyword String Expression
   deriving (Eq, Show, Generic)
 
 data Const
@@ -22,43 +22,28 @@ data Const
   deriving (Eq, Show, Generic)
 
 data Statement
-  = Expr {value :: Expression}
-  | Return {value :: Expression}
-  | If {test :: Expression, body :: [Statement], orelse :: [Statement]}
-  | FunctionDef
-      { name :: String,
-        args :: Arguments,
-        body :: [Statement],
-        decorator_list :: [Expression],
-        returns :: Maybe Expression,
-        type_comment :: Maybe String
-      }
+  = Expr Expression
+  | Return Expression
+  | If Expression [Statement] [Statement]
+  | FunctionDef String Arguments [Statement] [Expression] (Maybe Expression) (Maybe String)
   | Pass
   deriving (Eq, Show, Generic)
 
 data Expression
-  = Constant {value :: Const}
-  | Name {id :: String, ctx :: ExpressionContext}
-  | BinOp {left :: Expression, op :: BinaryOperator, right :: Expression}
-  | Compare {left :: Expression, ops :: [CmpOp], comparators :: [Expression]}
-  | Call {func :: Expression, args :: [Expression], keywords :: [Keyword]}
-  | List {elts :: [Expression], ctx :: ExpressionContext}
-  | Tuple {elts :: [Expression], ctx :: ExpressionContext}
-  | IfExp {test :: Expression, body :: Expression, orelse :: Expression}
+  = Constant Const
+  | Name String ExpressionContext
+  | BinOp Expression BinaryOperator Expression
+  | Compare Expression [CmpOp] [Expression]
+  | Call Expression [Expression] [Keyword]
+  | List [Expression] ExpressionContext
+  | Tuple [Expression] ExpressionContext
+  | IfExp Expression Expression Expression
   deriving (Eq, Show, Generic)
 
-data Arguments = Arguments
-  { posonlyargs :: [Arg],
-    args :: [Arg],
-    vararg :: Maybe Arg,
-    kwonlyargs :: [Arg],
-    kw_defaults :: [Expression],
-    kwarg :: Maybe Arg,
-    defaults :: [Expression]
-  }
+data Arguments = Arguments [Arg] [Arg] (Maybe Arg) [Arg] [Expression] (Maybe Arg) [Expression]
   deriving (Eq, Show, Generic)
 
-data Arg = Arg {arg :: String, annotation :: Maybe Expression, type_comment :: Maybe String}
+data Arg = Arg String (Maybe Expression) (Maybe String)
   deriving (Eq, Show, Generic)
 
 data BinaryOperator

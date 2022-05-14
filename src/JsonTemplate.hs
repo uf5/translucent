@@ -10,8 +10,8 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 import PythonAst (Expression)
 
-jsonFields :: Name -> [(Name, [String])] -> Q [Dec]
-jsonFields typeName fields = do
+jsonFields :: Name -> Maybe String -> [(Name, [String])] -> Q [Dec]
+jsonFields typeName tagNameOverride fields = do
   d <-
     instanceD
       (cxt [])
@@ -36,7 +36,14 @@ jsonFields typeName fields = do
                       names
                       ++ [ jsonEq
                              (AppE fs (ls "tag"))
-                             (AppE fs (ls $ nameBase n))
+                             ( AppE
+                                 fs
+                                 ( ls $
+                                     case tagNameOverride of
+                                       (Just tag) -> tag
+                                       Nothing -> nameBase n
+                                 )
+                             )
                          ]
                 )
           )
