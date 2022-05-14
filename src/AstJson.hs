@@ -14,8 +14,8 @@ jsonFields
   [ ('P.Constant, ["value"]),
     ('P.Name, ["id", "ctx"]),
     ('P.BinOp, ["left", "op", "right"]),
-    ('P.Compare, ["left", "op", "right"]),
-    ('P.Call, ["func", "args", "kwords"]),
+    ('P.Compare, ["left", "ops", "comparators"]),
+    ('P.Call, ["func", "args", "keywords"]),
     ('P.List, ["elts", "ctx"]),
     ('P.Tuple, ["elts", "ctx"]),
     ('P.IfExp, ["test", "body", "orelse"])

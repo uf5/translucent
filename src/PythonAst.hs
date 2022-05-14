@@ -40,7 +40,7 @@ data Expression
   = Constant {value :: Const}
   | Name {id :: String, ctx :: ExpressionContext}
   | BinOp {left :: Expression, op :: BinaryOperator, right :: Expression}
-  | Compare {left :: Expression, op_ :: CmpOp, right :: Expression}
+  | Compare {left :: Expression, ops :: [CmpOp], comparators :: [Expression]}
   | Call {func :: Expression, args :: [Expression], keywords :: [Keyword]}
   | List {elts :: [Expression], ctx :: ExpressionContext}
   | Tuple {elts :: [Expression], ctx :: ExpressionContext}

@@ -17,6 +17,15 @@ forms =
           return $ Constant P.None
       )
         . map trans
+    ),
+    -- TODO
+    ( "=",
+      ( \[a, b] -> do
+          a <- sub a
+          b <- sub b
+          return $ Compare a [Eq] [b]
+      )
+        . map trans
     )
   ]
 

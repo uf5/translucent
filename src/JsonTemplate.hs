@@ -19,30 +19,28 @@ jsonFields typeName fields = do
       [funD 'toJSON (map genClause fields)]
   return [d]
   where
-    genClause (n, fieldsStr) = do
-      let names = map mkNameS fieldsStr
+    genClause (n, strNames) = do
+      let names = map mkNameS strNames
       return $
         Clause
           [ConP n (map VarP names)]
           ( NormalB $
               AppE
                 (VarE 'object)
-                ( ListE
-                    ( zipWith
-                        ( \a b ->
-                            InfixE
-                              (Just $ AppE (VarE 'fromString) (LitE $ StringL a))
-                              (VarE '(.=))
-                              (Just $ VarE b)
-                        )
-                        fieldsStr
-                        names
-                        ++ [ InfixE
-                               (Just $ AppE (VarE 'fromString) (LitE $ StringL "tag"))
-                               (VarE '(.=))
-                               (Just $ AppE (VarE 'fromString) (LitE $ StringL $ showConstr $ toConstr n))
-                           ]
-                    )
+                ( ListE $
+                    zipWith
+                      ( \a b ->
+                          jsonEq (AppE fs (ls a)) (VarE b)
+                      )
+                      strNames
+                      names
+                      ++ [ jsonEq
+                             (AppE fs (ls "tag"))
+                             (AppE fs (ls $ nameBase n))
+                         ]
                 )
           )
           []
+    fs = VarE 'fromString
+    ls = LitE . StringL
+    jsonEq a b = InfixE (Just a) (VarE '(.=)) (Just b)
