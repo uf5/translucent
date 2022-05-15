@@ -1,10 +1,7 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DuplicateRecordFields #-}
 
 module PythonAst where
 
-import Data.Data (Data)
 import GHC.Generics (Generic)
 
 data Module = Module [Statement] [String]
@@ -60,7 +57,7 @@ data BinaryOperator
   | BitXor
   | BitAnd
   | FloorDiv
-  deriving (Eq, Show, Generic, Data)
+  deriving (Eq, Show, Generic)
 
 data CmpOp
   = Eq
@@ -73,7 +70,7 @@ data CmpOp
   | IsNot
   | In
   | NotIn
-  deriving (Eq, Show, Generic, Data)
+  deriving (Eq, Show, Generic)
 
 data ExpressionContext = Load | Store | Del
-  deriving (Eq, Show, Generic, Data)
+  deriving (Eq, Show, Generic)

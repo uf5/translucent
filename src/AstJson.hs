@@ -4,8 +4,6 @@
 module AstJson where
 
 import Data.Aeson
-import Data.Data
-import GHC.Generics (Generic)
 import JsonTemplate
 import qualified PythonAst as P
 
@@ -52,21 +50,15 @@ jsonFields
   (Just "arg")
   [('P.Arg, ["arg", "annotation", "type_comment"])]
 
+jsonDataTag ''P.ExpressionContext
+
+jsonDataTag ''P.BinaryOperator
+
+jsonDataTag ''P.CmpOp
+
 instance ToJSON P.Const where
   toJSON P.None = Null
   toJSON (P.Bool v) = toJSON v
   toJSON (P.Int v) = toJSON v
   toJSON (P.Float v) = toJSON v
   toJSON (P.String v) = toJSON v
-
-instance ToJSON P.ExpressionContext where
-  toJSON = dataToTag
-
-instance ToJSON P.BinaryOperator where
-  toJSON = dataToTag
-
-instance ToJSON P.CmpOp where
-  toJSON = dataToTag
-
-dataToTag :: (Data a) => a -> Value
-dataToTag x = object ["tag" .= showConstr (toConstr x)]
