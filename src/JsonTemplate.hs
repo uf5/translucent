@@ -28,26 +28,28 @@ jsonFields typeName tagNameOverride fields = do
               AppE
                 (VarE 'object)
                 ( ListE $
-                    zipWith
-                      ( \a b ->
-                          jsonEq (AppE fs (ls a)) (VarE b)
+                    (++)
+                      -- field names
+                      ( zipWith
+                          ( \a b ->
+                              jsonEq (fs $ ls a) (VarE b)
+                          )
+                          strNames
+                          names
                       )
-                      strNames
-                      names
-                      ++ [ jsonEq
-                             (AppE fs (ls "tag"))
-                             ( AppE
-                                 fs
-                                 ( ls $
-                                     case tagNameOverride of
-                                       (Just tag) -> tag
-                                       Nothing -> nameBase n
-                                 )
-                             )
-                         ]
+                      -- tag
+                      [ jsonEq
+                          (fs (ls "tag"))
+                          ( fs $
+                              ls $
+                                case tagNameOverride of
+                                  (Just tag) -> tag
+                                  Nothing -> nameBase n
+                          )
+                      ]
                 )
           )
           []
-    fs = VarE 'fromString
+    fs = AppE $ VarE 'fromString
     ls = LitE . StringL
     jsonEq a b = InfixE (Just a) (VarE '(.=)) (Just b)
