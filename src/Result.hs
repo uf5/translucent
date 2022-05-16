@@ -1,40 +1,35 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Result (Result, sub, block, funcbody, push, (+++)) where
+module Result (Result, sub, block, body, (+++)) where
 
-import Control.Monad.State
+import Control.Monad.Writer
 import PythonAst
 
-type Result = State [Statement] Expression
+type Result = Writer [Statement] Expression
 
-sub :: (MonadState [Statement] m) => Result -> m Expression
+sub :: (MonadWriter [Statement] m) => Result -> m Expression
 sub m = do
-  st <- get
-  let (e, s) = runState m st
-  put s
+  let (e, s) = runWriter m
+  tell s
   return e
 
 block :: Result -> [Statement]
-block x = case runState x [] of
+block x = case runWriter x of
   (Constant None, []) -> [Pass]
   (Constant None, s) -> s
   (e, s) -> s ++ [Expr e]
 
-funcbody :: Result -> [Statement]
-funcbody x = case runState x [] of
+body :: Result -> [Statement]
+body x = case runWriter x of
   (Constant None, []) -> [Pass]
   (Constant None, s) -> s
   (e, s) -> s ++ [Return e]
 
-push :: MonadState [Statement] m => Statement -> m ()
-push x = modify (++ [x])
-
 (+++) :: Result -> Result -> Result
 a +++ b = do
   let (e, s) =
-        ( let (e1, s1) = runState a []
-              (e2, s2) = runState b []
-           in (e2, s1 ++ [Expr e1] ++ s2)
-        )
-  put s
+        let (e1, s1) = runWriter a
+            (e2, s2) = runWriter b
+         in (e2, s1 ++ [Expr e1] ++ s2)
+  tell s
   return e

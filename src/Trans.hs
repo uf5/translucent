@@ -1,5 +1,6 @@
 module Trans (transModule) where
 
+import Control.Monad.Writer
 import PythonAst as P
 import Result
 import Types as T
@@ -12,7 +13,7 @@ forms =
     ( "if",
       ( \[x, y, z] -> do
           cond <- sub x
-          push $ If cond (block y) (block z)
+          tell [If cond (block y) (block z)]
           return $ Constant P.None
       )
         . map trans
