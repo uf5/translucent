@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Result (Result, sub, block, funcbody, (+++)) where
+module Result (Result, sub, block, funcbody, push, (+++)) where
 
 import Control.Monad.State
 import PythonAst
@@ -25,6 +25,9 @@ funcbody x = case runState x [] of
   (Constant None, []) -> [Pass]
   (Constant None, s) -> s
   (e, s) -> s ++ [Return e]
+
+push :: MonadState [Statement] m => Statement -> m ()
+push x = modify (++ [x])
 
 (+++) :: Result -> Result -> Result
 a +++ b = do

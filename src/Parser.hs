@@ -51,11 +51,6 @@ hashed :: LispVal -> LispVal
 hashed (SExp values) = Tuple values
 hashed exp = error $ "unknown hashed expression: " ++ show exp
 
-readExpr :: String -> LispVal
-readExpr s = case parse expr "lisp" s of
-  Left err -> error $ show err
-  Right val -> val
-
 readScript :: String -> [LispVal]
 readScript s = case parse (many expr) "lisp" s of
   Left err -> (error . show) err
