@@ -1,8 +1,7 @@
 module Language.Translucent.Parser (readScript) where
 
-import Text.ParserCombinators.Parsec
 import Language.Translucent.Types
-import Language.Translucent.Util
+import Text.ParserCombinators.Parsec
 
 allowedChar :: Parser Char
 allowedChar = noneOf "\n\r \"#(),;[\\]{}"
@@ -49,9 +48,12 @@ symbol x = Symbol x
 
 hashed :: LispVal -> LispVal
 hashed (SExp values) = Tuple values
-hashed exp = error $ "unknown hashed expression: " ++ show exp
+hashed x = error $ "unknown hashed expression: " ++ show x
 
 readScript :: String -> [LispVal]
 readScript s = case parse (many expr) "lisp" s of
   Left err -> (error . show) err
   Right val -> val
+
+prefix :: String -> LispVal -> LispVal
+prefix x y = SExp [Symbol x, y]

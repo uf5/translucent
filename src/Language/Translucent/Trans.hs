@@ -1,4 +1,4 @@
-module Language.Translucent.Trans (transModule) where
+module Language.Translucent.Trans (trans, transModule) where
 
 import Control.Monad.Writer
 import Data.Text (pack)
