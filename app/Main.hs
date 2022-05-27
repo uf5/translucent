@@ -2,9 +2,13 @@ module Main where
 
 import Data.Aeson.Text (encodeToLazyText)
 import qualified Data.Text.Lazy.IO as I
-import Lib
 import System.Environment (getArgs)
 import System.IO
+
+import Language.Translucent.Parser
+import Language.Translucent.Expansion
+import Language.Translucent.Trans
+import Language.Translucent.AstJson
 
 import System.Console.Haskeline
 import Control.Monad.IO.Class (liftIO)

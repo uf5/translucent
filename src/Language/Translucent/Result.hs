@@ -1,9 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Result (Result, sub, block, body, (+++)) where
+module Language.Translucent.Result (Result, sub, block, body, (+++)) where
 
 import Control.Monad.Writer
-import PythonAst
+import Language.Translucent.PythonAst
 
 type Result = Writer [Statement] Expression
 

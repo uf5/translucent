@@ -1,8 +1,8 @@
-module Parser (readScript) where
+module Language.Translucent.Parser (readScript) where
 
 import Text.ParserCombinators.Parsec
-import Types
-import Util
+import Language.Translucent.Types
+import Language.Translucent.Util
 
 allowedChar :: Parser Char
 allowedChar = noneOf "\n\r \"#(),;[\\]{}"

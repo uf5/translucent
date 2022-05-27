@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
 
-module JsonTemplate (jsonFields, jsonDataTag) where
+module Language.Translucent.JsonTemplate (jsonFields, jsonDataTag) where
 
 import Data.Aeson
 import Data.Aeson.Key (fromString)

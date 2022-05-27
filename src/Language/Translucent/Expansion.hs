@@ -1,7 +1,7 @@
-module Expansion (expandModule) where
+module Language.Translucent.Expansion (expandModule) where
 
-import Types
-import Util
+import Language.Translucent.Types
+import Language.Translucent.Util
 
 expand :: [(String, LispVal)] -> LispVal -> LispVal
 expand r1 (SExp ((Symbol "where") : (List defs) : body)) =

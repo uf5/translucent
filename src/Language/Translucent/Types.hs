@@ -1,4 +1,4 @@
-module Types where
+module Language.Translucent.Types where
 
 data LispVal
   = None

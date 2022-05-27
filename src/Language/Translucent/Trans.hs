@@ -1,9 +1,9 @@
-module Trans (transModule) where
+module Language.Translucent.Trans (transModule) where
 
 import Control.Monad.Writer
-import PythonAst as P
-import Result
-import Types as T
+import Language.Translucent.PythonAst as P
+import Language.Translucent.Result
+import Language.Translucent.Types as T
 
 forms :: [(String, [LispVal] -> Result)]
 forms =

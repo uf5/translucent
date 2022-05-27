@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module PythonAst where
+module Language.Translucent.PythonAst where
 
 import GHC.Generics (Generic)
 

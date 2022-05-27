@@ -1,5 +1,5 @@
-module Util (prefix, prefixList, wrapInDoIfNeeded) where
-import Types
+module Language.Translucent.Util (prefix, prefixList, wrapInDoIfNeeded) where
+import Language.Translucent.Types
 
 prefix :: String -> LispVal -> LispVal
 prefix x y = SExp [Symbol x, y]

@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module AstJson where
+module Language.Translucent.AstJson where
 
 import Data.Aeson
-import JsonTemplate
-import qualified PythonAst as P
+import Language.Translucent.JsonTemplate
+import qualified Language.Translucent.PythonAst as P
 
 jsonFields
   ''P.Expression
