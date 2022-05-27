@@ -1,9 +1,10 @@
 module Main where
 
-import Data.Aeson.Text (encodeToLazyText)
-import qualified Data.Text.Lazy.IO as I
+import Data.Aeson.Micro (encode)
 import System.Environment (getArgs)
 import System.IO
+
+import Data.ByteString.Lazy as B
 
 import Language.Translucent.Parser
 import Language.Translucent.Expansion
@@ -29,5 +30,6 @@ main = runInputT defaultSettings loop
                  outputStrLn $ show expanded
                  let translated = transModule expanded
                  outputStrLn $ show translated
-                 liftIO $ I.writeFile "out.json" (encodeToLazyText translated)
+                 -- liftIO $ writeFile "out.json" $ encode translated
+                 liftIO $ B.writeFile "out.json" $ encode translated
                  loop

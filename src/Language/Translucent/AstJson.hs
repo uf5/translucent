@@ -1,9 +1,10 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Language.Translucent.AstJson where
 
-import Data.Aeson
+import Data.Aeson.Micro
 import Language.Translucent.JsonTemplate
 import qualified Language.Translucent.PythonAst as P
 

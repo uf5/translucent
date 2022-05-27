@@ -2,12 +2,13 @@
 
 module Language.Translucent.PythonAst where
 
+import Data.Text
 import GHC.Generics (Generic)
 
-data Module = Module [Statement] [String]
+data Module = Module [Statement] [Text]
   deriving (Eq, Show, Generic)
 
-data Keyword = Keyword String Expression
+data Keyword = Keyword Text Expression
   deriving (Eq, Show, Generic)
 
 data Const
@@ -15,20 +16,20 @@ data Const
   | Bool Bool
   | Int Integer
   | Float Float
-  | String String
+  | String Text
   deriving (Eq, Show, Generic)
 
 data Statement
   = Expr Expression
   | Return Expression
   | If Expression [Statement] [Statement]
-  | FunctionDef String Arguments [Statement] [Expression] (Maybe Expression) (Maybe String)
+  | FunctionDef Text Arguments [Statement] [Expression] (Maybe Expression) (Maybe Text)
   | Pass
   deriving (Eq, Show, Generic)
 
 data Expression
   = Constant Const
-  | Name String ExpressionContext
+  | Name Text ExpressionContext
   | BinOp Expression BinaryOperator Expression
   | Compare Expression [CmpOp] [Expression]
   | Call Expression [Expression] [Keyword]
@@ -40,7 +41,7 @@ data Expression
 data Arguments = Arguments [Arg] [Arg] (Maybe Arg) [Arg] [Expression] (Maybe Arg) [Expression]
   deriving (Eq, Show, Generic)
 
-data Arg = Arg String (Maybe Expression) (Maybe String)
+data Arg = Arg Text (Maybe Expression) (Maybe Text)
   deriving (Eq, Show, Generic)
 
 data BinaryOperator

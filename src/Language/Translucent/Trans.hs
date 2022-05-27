@@ -1,6 +1,7 @@
 module Language.Translucent.Trans (transModule) where
 
 import Control.Monad.Writer
+import Data.Text (pack)
 import Language.Translucent.PythonAst as P
 import Language.Translucent.Result
 import Language.Translucent.Types as T
@@ -34,8 +35,8 @@ trans T.None = return $ Constant P.None
 trans (T.Bool x) = return $ Constant $ P.Bool x
 trans (T.Int x) = return $ Constant $ P.Int x
 trans (T.Float x) = return $ Constant $ P.Float x
-trans (T.String x) = return $ Constant $ P.String x
-trans (T.Symbol x) = return $ P.Name x P.Load
+trans (T.String x) = return $ Constant $ P.String $ pack x
+trans (T.Symbol x) = return $ P.Name (pack x) P.Load
 trans (T.SExp (h : t)) = case lookupForm of
   (Just form) -> form t
   Nothing -> do
