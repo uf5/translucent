@@ -1,5 +1,6 @@
-import sys, json
 import ast
+from sys import stdin
+import json
 
 
 def gen_ast(obj):
@@ -23,15 +24,11 @@ def gen_ast(obj):
 
 
 if __name__ == "__main__":
-    with open(sys.argv[1], "r") as json_file:
-        ast_json = json.load(json_file)
-        print(ast_json)
-        a = ast.fix_missing_locations(gen_ast(ast_json))
-        print("AST:")
-        print(ast.dump(a))
-        print("RECONSTRUCTED:")
-        print(ast.unparse(a))
-        print("BEGIN EVALUATION")
-        eval(compile(a, "", "exec"))
-        print("END EVALUATION")
+    ast_json = json.loads("".join(stdin.readlines()))
+    a = ast.fix_missing_locations(gen_ast(ast_json))
+    print("RECONSTRUCTED:")
+    print(ast.unparse(a))
+    print("BEGIN EVALUATION")
+    eval(compile(a, "", "exec"))
+    print("END EVALUATION")
 

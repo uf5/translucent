@@ -35,8 +35,6 @@ library
 executable translucent-exe
     main-is:          Main.hs
 
-    other-modules:    Repl
-
     hs-source-dirs:   app
 
     default-language: Haskell2010
