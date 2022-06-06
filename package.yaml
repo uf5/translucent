@@ -1,0 +1,51 @@
+name:                translucent
+version:             0.1.0.0
+github:              "uf5/translucent"
+license:             BSD3
+author:              "uf5"
+maintainer:          "notbailey13@gmail.com"
+copyright:           "2022 uf5"
+
+extra-source-files:
+- README.md
+
+synopsis:            Lisp to Python3 transpiler
+category:            Language
+
+description:         Please see the README on GitHub at <https://github.com/uf5/translucent#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- text
+- template-haskell
+
+library:
+  source-dirs: src
+  dependencies:
+  - mtl
+  - parsec
+  - unordered-containers
+
+executables:
+  translucent-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - aeson
+    - template-haskell
+    - translucent
+
+tests:
+  translucent-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - translucent

@@ -1,6 +1,9 @@
+*~
+
 **/.DS_Store
 
-/out.json
+/translucent.cabal
+/stack.yaml.lock
 
 dist
 dist-*

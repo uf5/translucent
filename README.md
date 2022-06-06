@@ -4,7 +4,7 @@ WIP Clojure-flavored Lisp -> Python transpiler.
 The transpiler itself translates Lisp code into [Python AST](https://docs.python.org/3/library/ast.html). Then it serializes it into JSON, which can then be used to reconstruct the Python program.
 ### Usage:
 ```sh
-cabal run | tail -n 1 | python3 py/reconstruct_from_json.py
+stack run | tail -n 1 | python3 py/reconstruct_from_json.py
 ```
 ## Example
 TODO

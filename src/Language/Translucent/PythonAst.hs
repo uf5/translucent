@@ -1,18 +1,12 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TemplateHaskell #-}
-
 module Language.Translucent.PythonAst where
 
-import Data.Aeson.Micro (ToJSON, Value (Null), toJSON)
 import Data.Text
-import GHC.Generics (Generic)
-import Language.Translucent.JsonTemplate
 
 data Module = Module [Statement] [Text]
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show)
 
 data Keyword = Keyword Text Expression
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show)
 
 data Const
   = None
@@ -20,7 +14,7 @@ data Const
   | Int Integer
   | Float Float
   | String Text
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show)
 
 data Statement
   = Expr Expression
@@ -28,7 +22,7 @@ data Statement
   | If Expression [Statement] [Statement]
   | FunctionDef Text Arguments [Statement] [Expression] (Maybe Expression) (Maybe Text)
   | Pass
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show)
 
 data Expression
   = Constant Const
@@ -39,13 +33,13 @@ data Expression
   | List [Expression] ExpressionContext
   | Tuple [Expression] ExpressionContext
   | IfExp Expression Expression Expression
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show)
 
 data Arguments = Arguments [Arg] [Arg] (Maybe Arg) [Arg] [Expression] (Maybe Arg) [Expression]
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show)
 
 data Arg = Arg Text (Maybe Expression) (Maybe Text)
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show)
 
 data BinaryOperator
   = Add
@@ -61,7 +55,7 @@ data BinaryOperator
   | BitXor
   | BitAnd
   | FloorDiv
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show)
 
 data CmpOp
   = Eq
@@ -74,63 +68,7 @@ data CmpOp
   | IsNot
   | In
   | NotIn
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show)
 
 data ExpressionContext = Load | Store | Del
-  deriving (Eq, Show, Generic)
-
-jsonFields
-  ''Expression
-  Nothing
-  [ ('Constant, ["value"]),
-    ('Name, ["id", "ctx"]),
-    ('BinOp, ["left", "op", "right"]),
-    ('Compare, ["left", "ops", "comparators"]),
-    ('Call, ["func", "args", "keywords"]),
-    ('List, ["elts", "ctx"]),
-    ('Tuple, ["elts", "ctx"]),
-    ('IfExp, ["test", "body", "orelse"])
-  ]
-
-jsonFields
-  ''Statement
-  Nothing
-  [ ('Expr, ["value"]),
-    ('Return, ["value"]),
-    ('If, ["test", "body", "orelse"]),
-    ('FunctionDef, ["name", "args", "body", "decorator_list", "returns", "type_comment"]),
-    ('Pass, [])
-  ]
-
-jsonFields
-  ''Module
-  Nothing
-  [('Module, ["body", "type_ignores"])]
-
-jsonFields
-  ''Keyword
-  Nothing
-  [('Keyword, ["args", "value"])]
-
-jsonFields
-  ''Arguments
-  (Just "arguments")
-  [('Arguments, ["posonlyargs", "args", "vararg", "kwonlyargs", "kw_defaults", "kwarg", "defaults"])]
-
-jsonFields
-  ''Arg
-  (Just "arg")
-  [('Arg, ["arg", "annotation", "type_comment"])]
-
-jsonDataTag ''ExpressionContext
-
-jsonDataTag ''BinaryOperator
-
-jsonDataTag ''CmpOp
-
-instance ToJSON Const where
-  toJSON None = Null
-  toJSON (Bool v) = toJSON v
-  toJSON (Int v) = toJSON v
-  toJSON (Float v) = toJSON v
-  toJSON (String v) = toJSON v
+  deriving (Eq, Show)

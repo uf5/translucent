@@ -1,10 +1,9 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskellQuotes #-}
 
-module Language.Translucent.JsonTemplate (jsonFields, jsonDataTag) where
+module JsonTemplate where
 
-import Data.Aeson.Micro
-import Data.Text (pack)
+import Data.Aeson
+import Data.Aeson.Key (fromString)
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 
@@ -48,7 +47,7 @@ jsonFields typeName tagNameOverride fields = do
                     )
               )
               []
-    fs = AppE $ VarE 'pack
+    fs = AppE $ VarE 'fromString
     ls = LitE . StringL
     jsonEq a b = InfixE (Just a) (VarE '(.=)) (Just b)
 
@@ -79,5 +78,5 @@ jsonDataTag typeName = do
           )
           []
     genClause _ = error "not valid"
-    fs = AppE $ VarE 'pack
+    fs = AppE $ VarE 'fromString
     ls = LitE . StringL
