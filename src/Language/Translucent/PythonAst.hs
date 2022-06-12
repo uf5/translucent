@@ -2,6 +2,8 @@ module Language.Translucent.PythonAst where
 
 import Data.Text
 
+-- See <https://docs.python.org/3/library/ast.html> for more information
+
 data Module = Module [Statement] [Text]
   deriving (Eq, Show)
 
