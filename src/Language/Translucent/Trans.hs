@@ -1,4 +1,4 @@
-module Language.Translucent.Trans (trans, transModule) where
+module Language.Translucent.Trans (trans, transStmts, transModule) where
 
 import Control.Monad.Writer
 import Data.HashMap.Strict (HashMap)
@@ -52,5 +52,8 @@ trans (T.SExp (h : t)) = case lookupForm of
       _ -> Nothing
 trans x = error $ "unknown expression: " ++ show x
 
+transStmts :: [LispVal] -> [Statement]
+transStmts = block . foldl1 (+++) . map trans
+
 transModule :: [LispVal] -> P.Module
-transModule x = P.Module (block $ foldl1 (+++) $ map trans x) []
+transModule x = P.Module (transStmts x) []

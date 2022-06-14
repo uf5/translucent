@@ -1,6 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Language.Translucent.Result (Result, sub, block, body, (+++)) where
+module Language.Translucent.Result
+  ( Result,
+    sub,
+    block,
+    Language.Translucent.Result.body,
+    (+++),
+  )
+where
 
 import Control.Monad.Writer
 import Language.Translucent.PythonAst

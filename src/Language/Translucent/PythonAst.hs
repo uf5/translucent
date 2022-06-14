@@ -1,14 +1,18 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+
 module Language.Translucent.PythonAst where
 
 import Data.Text
+import GHC.Generics (Generic)
 
 -- See <https://docs.python.org/3/library/ast.html> for more information
 
-data Module = Module [Statement] [Text]
-  deriving (Eq, Show)
+data Module = Module {body :: [Statement], type_ignores :: [Text]}
+  deriving (Eq, Show, Generic)
 
 data Keyword = Keyword Text Expression
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 data Const
   = None
@@ -16,32 +20,55 @@ data Const
   | Int Integer
   | Float Float
   | String Text
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 data Statement
-  = Expr Expression
-  | Return Expression
-  | If Expression [Statement] [Statement]
-  | FunctionDef Text Arguments [Statement] [Expression] (Maybe Expression) (Maybe Text)
+  = Expr {value :: Expression}
+  | Return {value :: Expression}
+  | If
+      { test :: Expression,
+        body :: [Statement],
+        orelse :: [Statement]
+      }
+  | FunctionDef
+      { name :: Text,
+        args :: Arguments,
+        body :: [Statement],
+        decorator_list :: [Expression],
+        returns :: Maybe Expression,
+        type_comment :: Maybe Text
+      }
   | Pass
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 data Expression
-  = Constant Const
-  | Name Text ExpressionContext
-  | BinOp Expression BinaryOperator Expression
-  | Compare Expression [CmpOp] [Expression]
-  | Call Expression [Expression] [Keyword]
-  | List [Expression] ExpressionContext
-  | Tuple [Expression] ExpressionContext
-  | IfExp Expression Expression Expression
-  deriving (Eq, Show)
+  = Constant {value :: Const}
+  | Name {id :: Text, ctx :: ExpressionContext}
+  | BinOp
+      { left :: Expression,
+        op :: BinaryOperator,
+        right :: Expression
+      }
+  | Compare
+      { left :: Expression,
+        ops :: [CmpOp],
+        comparators :: [Expression]
+      }
+  | Call
+      { func :: Expression,
+        args :: [Expression],
+        keywords :: [Keyword]
+      }
+  | List {elts :: [Expression], ctx :: ExpressionContext}
+  | Tuple {elts :: [Expression], ctx :: ExpressionContext}
+  | IfExp {test :: Expression, body :: Expression, orelse :: Expression}
+  deriving (Eq, Show, Generic)
 
-data Arguments = Arguments [Arg] [Arg] (Maybe Arg) [Arg] [Expression] (Maybe Arg) [Expression]
-  deriving (Eq, Show)
+data Arguments = Arguments {posonlyargs :: [Arg], args :: [Arg], vararg :: Maybe Arg, kwonlyargs :: [Arg], kw_defaults :: [Expression], kwarg :: Maybe Arg, defaults :: [Expression]}
+  deriving (Eq, Show, Generic)
 
-data Arg = Arg Text (Maybe Expression) (Maybe Text)
-  deriving (Eq, Show)
+data Arg = Arg {arg :: Text, annotation :: Maybe Expression, type_comment :: Maybe Text}
+  deriving (Eq, Show, Generic)
 
 data BinaryOperator
   = Add
@@ -57,7 +84,7 @@ data BinaryOperator
   | BitXor
   | BitAnd
   | FloorDiv
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 data CmpOp
   = Eq
@@ -70,7 +97,7 @@ data CmpOp
   | IsNot
   | In
   | NotIn
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
 
 data ExpressionContext = Load | Store | Del
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
