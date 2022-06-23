@@ -1,5 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Language.Translucent.Parser (readProgram) where
 
+import Data.Text (Text, pack)
 import Language.Translucent.Types
 import Text.ParserCombinators.Parsec
 
@@ -22,8 +25,8 @@ escapeChar x = error ("Unknown escape character: " ++ show x)
 
 expr :: Parser LispVal
 expr =
-  (String <$> (char '"' *> many stringChar <* char '"'))
-    <|> (Keyword <$> (char ':' *> many1 allowedChar))
+  (String . pack <$> (char '"' *> many stringChar <* char '"'))
+    <|> (Keyword . pack <$> (char ':' *> many1 allowedChar))
     <|> try
       ( Float . read <$> do
           x <- many1 digit
@@ -44,7 +47,7 @@ symbol :: String -> LispVal
 symbol "True" = Bool True
 symbol "False" = Bool False
 symbol "None" = None
-symbol x = Symbol x
+symbol x = Symbol $ pack x
 
 hashed :: LispVal -> LispVal
 hashed (SExp values) = Tuple values
@@ -55,5 +58,5 @@ program = sep *> many (expr <* sep) <* eof
 
 readProgram = parse program
 
-prefix :: String -> LispVal -> LispVal
+prefix :: Text -> LispVal -> LispVal
 prefix x y = SExp [Symbol x, y]
