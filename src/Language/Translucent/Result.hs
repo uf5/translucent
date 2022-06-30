@@ -1,24 +1,26 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Language.Translucent.Result
   ( Result,
-    sub,
+    ResultT,
     block,
-    Language.Translucent.Result.body,
-    (+++),
+    blockT,
+    comb,
   )
 where
 
 import Control.Monad.Writer
-import Language.Translucent.PythonAst
+import Data.Functor ((<&>))
+import Language.Translucent.PythonAst hiding (id)
 
 type Result = Writer [Statement] Expression
 
-sub :: (MonadWriter [Statement] m) => Result -> m Expression
-sub m = do
-  let (e, s) = runWriter m
-  tell s
-  return e
+type ResultT m = WriterT [Statement] m Expression
+
+-- there is no need for a sub functon
+-- subT :: (Monad m) => ResultT m -> ResultT m
+-- subT = id
 
 block :: Result -> [Statement]
 block x = case runWriter x of
@@ -26,17 +28,17 @@ block x = case runWriter x of
   (Constant None, s) -> s
   (e, s) -> s ++ [Expr e]
 
-body :: Result -> [Statement]
-body x = case runWriter x of
-  (Constant None, []) -> [Pass]
-  (Constant None, s) -> s
-  (e, s) -> s ++ [Return e]
+blockT :: Monad m => ResultT m -> m [Statement]
+blockT x =
+  runWriterT x
+    <&> ( \case
+            (Constant None, []) -> [Pass]
+            (Constant None, s) -> s
+            (e, s) -> s ++ [Expr e]
+        )
 
-(+++) :: Result -> Result -> Result
-a +++ b = do
-  let (e, s) =
-        let (e1, s1) = runWriter a
-            (e2, s2) = runWriter b
-         in (e2, s1 ++ [Expr e1] ++ s2)
-  tell s
-  return e
+comb :: Monad m => ResultT m -> ResultT m -> ResultT m
+comb a b = WriterT $ do
+  (e1, s1) <- runWriterT a
+  (e2, s2) <- runWriterT b
+  return (e2, s1 ++ [Expr e1] ++ s2)
