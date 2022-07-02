@@ -2,39 +2,29 @@
 {-# LANGUAGE LambdaCase #-}
 
 module Language.Translucent.Result
-  ( Result,
-    ResultT,
+  ( ResultT,
     block,
-    blockT,
+    stmts,
     comb,
   )
 where
 
 import Control.Monad.Writer
 import Data.Functor ((<&>))
-import Language.Translucent.PythonAst hiding (id)
-
-type Result = Writer [Statement] Expression
+import Language.Translucent.PythonAst hiding (body, id)
 
 type ResultT m = WriterT [Statement] m Expression
 
--- there is no need for a sub functon
--- subT :: (Monad m) => ResultT m -> ResultT m
--- subT = id
+block :: Monad m => ResultT m -> m [Statement]
+block = stmts Expr
 
-block :: Result -> [Statement]
-block x = case runWriter x of
-  (Constant None, []) -> [Pass]
-  (Constant None, s) -> s
-  (e, s) -> s ++ [Expr e]
-
-blockT :: Monad m => ResultT m -> m [Statement]
-blockT x =
+stmts :: Monad m => (Expression -> Statement) -> ResultT m -> m [Statement]
+stmts c x =
   runWriterT x
     <&> ( \case
             (Constant None, []) -> [Pass]
             (Constant None, s) -> s
-            (e, s) -> s ++ [Expr e]
+            (e, s) -> s ++ [c e]
         )
 
 comb :: Monad m => ResultT m -> ResultT m -> ResultT m
