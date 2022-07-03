@@ -30,6 +30,11 @@ data Statement
         body :: [Statement],
         orelse :: [Statement]
       }
+  | Assign
+      { targets :: [Expression],
+        value :: Expression,
+        type_comment :: Maybe Text
+      }
   | FunctionDef
       { name :: Text,
         args :: Arguments,

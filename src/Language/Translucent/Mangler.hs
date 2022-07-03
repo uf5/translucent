@@ -72,9 +72,51 @@ mangle x =
 
 isValidPythonId :: String -> Bool
 isValidPythonId "" = error "Got an empty identifier"
-isValidPythonId (start : continue) = CS.member start id_start && Prelude.all (`CS.member` id_continue) continue
+isValidPythonId x =
+  not (HS.member x keywords)
+    && let (start : continue) = x
+        in CS.member start id_start && Prelude.all (`CS.member` id_continue) continue
   where
     id_start = uppercaseLetter <> lowercaseLetter <> titlecaseLetter <> modifierLetter <> otherLetter <> letterNumber
     id_continue = id_start <> nonSpacingMark <> spacingCombiningMark <> decimalNumber <> connectorPunctuation
+    -- Python 3.10 keywords
+    keywords =
+      HS.fromList
+        [ "False",
+          "await",
+          "else",
+          "import",
+          "pass",
+          "None",
+          "break",
+          "except",
+          "in",
+          "raise",
+          "True",
+          "class",
+          "finally",
+          "is",
+          "return",
+          "and",
+          "continue",
+          "for",
+          "lambda",
+          "try",
+          "as",
+          "def",
+          "from",
+          "nonlocal",
+          "while",
+          "assert",
+          "del",
+          "global",
+          "not",
+          "with",
+          "async",
+          "elif",
+          "if",
+          "or",
+          "yield"
+        ]
 
 evalMangler = (`evalState` ManglerState HS.empty HM.empty 0)

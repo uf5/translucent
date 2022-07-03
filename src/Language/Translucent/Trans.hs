@@ -24,13 +24,17 @@ forms =
       ( "do-fn",
         fnbody . foldl1 comb . map trans
       ),
+      ( "set!",
+        \[Symbol name, value] -> do
+          value <- trans value
+          writer (Constant P.None, [Assign [P.Name name P.Store] value Nothing])
+      ),
       ( "if",
         ( \[x, y, z] -> do
             cond <- x
             yy <- lift $ block y
             zz <- lift $ block z
-            tell [If cond yy zz]
-            return $ Constant P.None
+            writer (Constant P.None, [If cond yy zz])
         )
           . map trans
       ),

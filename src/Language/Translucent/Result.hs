@@ -47,4 +47,6 @@ comb :: Monad m => ResultT m -> ResultT m -> ResultT m
 comb a b = WriterT $ do
   (e1, s1) <- runWriterT a
   (e2, s2) <- runWriterT b
-  return (e2, s1 ++ [Expr e1] ++ s2)
+  return (e2, s1 ++ (rmUnnecessary e1) ++ s2)
+    where rmUnnecessary (Constant None) = []
+          rmUnnecessary x = [Expr x]
