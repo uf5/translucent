@@ -3,6 +3,7 @@
 module Language.Translucent.Trans (trans, transStmts, transModule) where
 
 import Control.Monad.Writer
+import Data.Functor
 import Data.Functor.Identity
 import Data.HashMap.Lazy (HashMap)
 import qualified Data.HashMap.Lazy as HM
@@ -49,9 +50,7 @@ trans (T.Bool x) = return $ Constant $ P.Bool x
 trans (T.Int x) = return $ Constant $ P.Int x
 trans (T.Float x) = return $ Constant $ P.Float x
 trans (T.String x) = return $ Constant $ P.String x
-trans (T.Symbol x) = do
-  reserve x
-  return $ P.Name x P.Load
+trans (T.Symbol x) = mangle x <&> (`P.Name` P.Load)
 trans (T.SExp (h : t)) = case lookupForm h of
   (Just form) -> form t
   Nothing -> do

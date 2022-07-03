@@ -22,6 +22,7 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
+  - charset
   - mtl
   - parsec
   - unordered-containers
