@@ -4,19 +4,35 @@
 module Language.Translucent.Result
   ( ResultT,
     block,
-    stmts,
+    fnbody,
     comb,
   )
 where
 
+import Control.Monad.Identity (Identity)
 import Control.Monad.Writer
 import Data.Functor ((<&>))
+import Language.Translucent.Mangler
 import Language.Translucent.PythonAst hiding (body, id)
 
 type ResultT m = WriterT [Statement] m Expression
 
-block :: Monad m => ResultT m -> m [Statement]
-block = stmts Expr
+block x = stmts Expr x
+
+fnbody x = WriterT $ do
+  body <- stmts Return x
+  name <- genName
+  return
+    ( Call (Name name Load) [] [],
+      [ FunctionDef
+          name
+          (Arguments [] [] Nothing [] [] Nothing [])
+          body
+          []
+          Nothing
+          Nothing
+      ]
+    )
 
 stmts :: Monad m => (Expression -> Statement) -> ResultT m -> m [Statement]
 stmts c x =

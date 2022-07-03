@@ -25,6 +25,9 @@ forms =
     [ ( "do",
         foldl1 comb . map trans
       ),
+      ( "do-fn",
+        fnbody . foldl1 comb . map trans
+      ),
       ( "if",
         ( \[x, y, z] -> do
             cond <- x

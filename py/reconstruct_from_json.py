@@ -26,9 +26,5 @@ def gen_ast(obj):
 if __name__ == "__main__":
     ast_json = json.loads("".join(stdin.readlines()))
     a = ast.fix_missing_locations(gen_ast(ast_json))
-    print("RECONSTRUCTED:")
     print(ast.unparse(a))
-    print("BEGIN EVALUATION")
-    eval(compile(a, "", "exec"))
-    print("END EVALUATION")
 

@@ -4,7 +4,11 @@ import Data.Aeson hiding (Bool, String)
 import Data.Char (toLower)
 import Language.Translucent.PythonAst
 
-lowerOptions = defaultOptions {constructorTagModifier = map toLower}
+lowerOptions =
+  defaultOptions
+    { tagSingleConstructors = True,
+      constructorTagModifier = map toLower
+    }
 
 tagSingleOptions = defaultOptions {tagSingleConstructors = True}
 
