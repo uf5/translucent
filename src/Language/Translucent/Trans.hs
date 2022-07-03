@@ -13,10 +13,6 @@ import Language.Translucent.PythonAst as P hiding (id)
 import Language.Translucent.Result
 import Language.Translucent.Types as T
 
-wrapper = evalMangler
-
-wrappedBlockT = wrapper . block
-
 type WrappedResult = ResultT (ManglerT Identity)
 
 forms :: HashMap Text ([LispVal] -> WrappedResult)
@@ -31,7 +27,9 @@ forms =
       ( "if",
         ( \[x, y, z] -> do
             cond <- x
-            tell [If cond (wrappedBlockT y) (wrappedBlockT z)]
+            yy <- lift $ block y
+            zz <- lift $ block z
+            tell [If cond yy zz]
             return $ Constant P.None
         )
           . map trans
@@ -67,7 +65,7 @@ trans (T.SExp (h : t)) = case lookupForm h of
 trans x = error $ "unknown expression: " ++ show x
 
 transStmts :: [LispVal] -> [Statement]
-transStmts = wrapper . block . foldl1 comb . map trans
+transStmts = evalMangler . block . foldl1 comb . map trans
 
 transModule :: [LispVal] -> P.Module
 transModule x = P.Module (transStmts x) []
