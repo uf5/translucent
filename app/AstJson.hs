@@ -4,15 +4,25 @@ import Data.Aeson hiding (Bool, String)
 import Data.Char (toLower)
 import Language.Translucent.PythonAst
 
+lowerOptions :: Options
 lowerOptions =
   defaultOptions
     { tagSingleConstructors = True,
       constructorTagModifier = map toLower
     }
 
+tagSingleOptions :: Options
 tagSingleOptions = defaultOptions {tagSingleConstructors = True}
 
+tagNullaryOptions :: Options
 tagNullaryOptions = defaultOptions {allNullaryToStringTag = False}
+
+leadingUnderscoreOptions :: Options
+leadingUnderscoreOptions =
+  defaultOptions {fieldLabelModifier = stripFn}
+  where
+    stripFn ('_' : x) = x
+    stripFn x = x
 
 instance ToJSON Const where
   toJSON None = Null
@@ -22,7 +32,7 @@ instance ToJSON Const where
   toJSON (String v) = toJSON v
 
 instance ToJSON Expression where
-  toEncoding = genericToEncoding defaultOptions
+  toEncoding = genericToEncoding leadingUnderscoreOptions
 
 instance ToJSON Statement where
   toEncoding = genericToEncoding defaultOptions

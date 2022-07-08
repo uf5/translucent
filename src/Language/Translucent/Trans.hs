@@ -1,7 +1,9 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Language.Translucent.Trans (trans, transStmts, transModule) where
 
+import Control.Monad
 import Control.Monad.Writer
 import Data.Functor
 import Data.Functor.Identity
@@ -40,12 +42,11 @@ forms =
       ),
       -- TODO
       ( "=",
-        ( \[a, b] -> do
-            a <- a
-            b <- b
-            return $ Compare a [Eq] [b]
-        )
-          . map trans
+        mapM trans
+          >=> \case
+            [] -> undefined
+            [_] -> undefined
+            (h : t) -> return $ Compare h (replicate (length t) Eq) t
       )
     ]
 
