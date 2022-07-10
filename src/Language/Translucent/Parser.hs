@@ -12,7 +12,7 @@ allowedChar = noneOf "\n\r\t \"#(),;[\\]{}"
 sep :: Parser String
 sep = many $ oneOf " \n\t" <|> char ';' <* many (noneOf "\n")
 
-parseSeq :: Char -> Char -> Parser [LispVal]
+parseSeq :: Char -> Char -> Parser [Lisp]
 parseSeq open close = char open *> sep *> many (expr <* sep) <* char close
 
 stringChar :: Parser Char
@@ -23,7 +23,7 @@ escapeChar 'n' = '\n'
 escapeChar 'r' = '\r'
 escapeChar x = error ("Unknown escape character: " ++ show x)
 
-expr :: Parser LispVal
+expr :: Parser Lisp
 expr =
   (String . pack <$> (char '"' *> many stringChar <* char '"'))
     <|> (Keyword . pack <$> (char ':' *> many1 allowedChar))
@@ -43,20 +43,20 @@ expr =
     <|> (prefix "quasiquote" <$> (char '`' *> expr))
     <|> (symbol <$> many1 allowedChar)
 
-symbol :: String -> LispVal
+symbol :: String -> Lisp
 symbol "True" = Bool True
 symbol "False" = Bool False
 symbol "None" = None
 symbol x = Symbol $ pack x
 
-hashed :: LispVal -> LispVal
+hashed :: Lisp -> Lisp
 hashed (SExp values) = Tuple values
 hashed x = error $ "unknown hashed expression: " ++ show x
 
-program :: Parser [LispVal]
+program :: Parser [Lisp]
 program = sep *> many (expr <* sep) <* eof
 
 readProgram = parse program
 
-prefix :: Text -> LispVal -> LispVal
+prefix :: Text -> Lisp -> Lisp
 prefix x y = SExp [Symbol x, y]

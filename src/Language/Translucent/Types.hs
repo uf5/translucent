@@ -2,7 +2,7 @@ module Language.Translucent.Types where
 
 import Data.Text (Text)
 
-data LispVal
+data Lisp
   = None
   | Bool Bool
   | Int Integer
@@ -10,8 +10,8 @@ data LispVal
   | String Text
   | Symbol Text
   | Keyword Text
-  | SExp [LispVal]
-  | List [LispVal]
-  | Tuple [LispVal]
-  | Set [LispVal]
+  | SExp [Lisp]
+  | List [Lisp]
+  | Tuple [Lisp]
+  | Set [Lisp]
   deriving (Eq, Show)

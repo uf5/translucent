@@ -17,7 +17,7 @@ import Language.Translucent.Types as T
 
 type WrappedResult = ResultT (ManglerT Identity)
 
-forms :: HashMap Text ([LispVal] -> WrappedResult)
+forms :: HashMap Text ([Lisp] -> WrappedResult)
 forms =
   HM.fromList
     [ ( "do",
@@ -50,7 +50,7 @@ forms =
       )
     ]
 
-trans :: LispVal -> WrappedResult
+trans :: Lisp -> WrappedResult
 trans T.None = return $ Constant P.None
 trans (T.Bool x) = return $ Constant $ P.Bool x
 trans (T.Int x) = return $ Constant $ P.Int x
@@ -69,8 +69,8 @@ trans (T.SExp (h : t)) = case lookupForm h of
       _ -> Nothing
 trans x = error $ "unknown expression: " ++ show x
 
-transStmts :: [LispVal] -> [Statement]
+transStmts :: [Lisp] -> [Statement]
 transStmts = evalMangler . block . foldl1 comb . map trans
 
-transModule :: [LispVal] -> P.Module
+transModule :: [Lisp] -> P.Module
 transModule x = P.Module (transStmts x) []
