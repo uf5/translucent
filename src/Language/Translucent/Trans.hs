@@ -3,19 +3,20 @@
 
 module Language.Translucent.Trans (trans, transStmts, transModule) where
 
-import Control.Monad
+import Control.Monad.Except
 import Control.Monad.Writer
 import Data.Functor
 import Data.Functor.Identity
 import Data.HashMap.Lazy (HashMap)
 import qualified Data.HashMap.Lazy as HM
 import Data.Text (Text)
+import Language.Translucent.Exceptions
 import Language.Translucent.Mangler
 import Language.Translucent.PythonAst as P hiding (id)
 import Language.Translucent.Result
 import Language.Translucent.Types as T
 
-type WrappedResult = ResultT (ManglerT Identity)
+type WrappedResult = ResultT (ManglerT (TransExceptT Identity))
 
 forms :: HashMap Text ([Lisp] -> WrappedResult)
 forms =
@@ -67,10 +68,10 @@ trans (T.SExp (h : t)) = case lookupForm h of
     lookupForm h = case h of
       (T.Symbol x) -> HM.lookup x forms
       _ -> Nothing
-trans x = error $ "unknown expression: " ++ show x
+trans x = throwError $ TransError ("unknown expression: " ++ show x)
 
-transStmts :: [Lisp] -> [Statement]
-transStmts = evalMangler . block . foldl1 comb . map trans
+transStmts :: [Lisp] -> Either TransException [Statement]
+transStmts = runIdentity . runExceptT . evalMangler . block . foldl1 comb . map trans
 
-transModule :: [Lisp] -> P.Module
-transModule x = P.Module (transStmts x) []
+transModule :: [Lisp] -> Either TransException P.Module
+transModule x = transStmts x >>= Right . (`Module` [])

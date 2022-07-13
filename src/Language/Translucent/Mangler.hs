@@ -119,4 +119,5 @@ isValidPythonId x =
           "yield"
         ]
 
-evalMangler = (`evalState` ManglerState HS.empty HM.empty 0)
+evalMangler :: Monad m => ManglerT m a -> m a
+evalMangler = (`evalStateT` ManglerState HS.empty HM.empty 0)
