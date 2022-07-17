@@ -1,62 +1,71 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Language.Translucent.Parser (readProgram) where
 
 import Data.Text (Text, pack)
+import Data.Void (Void)
 import Language.Translucent.Types
-import Text.ParserCombinators.Parsec
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import qualified Text.Megaparsec.Char.Lexer as L
+
+type Parser = Parsec Void String
+
+sc :: Parser ()
+sc = L.space space1 (L.skipLineComment ";") empty
 
 allowedChar :: Parser Char
 allowedChar = noneOf "\n\r\t \"#(),;[\\]{}"
 
-sep :: Parser String
-sep = many $ oneOf " \n\t" <|> char ';' <* many (noneOf "\n")
-
-parseSeq :: Char -> Char -> Parser [Lisp]
-parseSeq open close = char open *> sep *> many (expr <* sep) <* char close
-
 stringChar :: Parser Char
-stringChar = escapeChar <$> (char '\\' *> anyChar) <|> noneOf "\""
+stringChar = escapeChar <$> (char '\\' *> printChar) <|> anySingleBut '"'
 
 escapeChar :: Char -> Char
 escapeChar 'n' = '\n'
 escapeChar 'r' = '\r'
+escapeChar '\\' = '\\'
+escapeChar '"' = '"'
 escapeChar x = error ("Unknown escape character: " ++ show x)
-
-expr :: Parser Lisp
-expr =
-  (String . pack <$> (char '"' *> many stringChar <* char '"'))
-    <|> (Keyword . pack <$> (char ':' *> many1 allowedChar))
-    <|> try
-      ( Float . read <$> do
-          x <- many1 digit
-          char '.'
-          y <- many1 digit
-          return $ x ++ "." ++ y
-      )
-    <|> (Int . read <$> many1 digit)
-    <|> (SExp <$> parseSeq '(' ')')
-    <|> (List <$> parseSeq '[' ']')
-    <|> (Set <$> parseSeq '{' '}')
-    <|> (hashed <$> (char '#' *> expr))
-    <|> (prefix "quote" <$> (char '\'' *> expr))
-    <|> (prefix "quasiquote" <$> (char '`' *> expr))
-    <|> (symbol <$> many1 allowedChar)
-
-symbol :: String -> Lisp
-symbol "True" = Bool True
-symbol "False" = Bool False
-symbol "None" = None
-symbol x = Symbol $ pack x
 
 hashed :: Lisp -> Lisp
 hashed (SExp values) = Tuple values
-hashed x = error $ "unknown hashed expression: " ++ show x
+hashed (Set values) = mkDict values
+  where
+    mkDict :: [Lisp] -> Lisp
+    mkDict x
+      | even (length x) = let (values, keys) = evensAndOdds x in Dict keys values
+      | otherwise = undefined
+      where
+        evensAndOdds :: [a] -> ([a], [a])
+        evensAndOdds = foldr f ([], [])
+          where
+            f a (ls, rs) = (rs, a : ls)
+hashed _ = undefined
 
-program :: Parser [Lisp]
-program = sep *> many (expr <* sep) <* eof
+pExpr :: Parser Lisp
+pExpr =
+  choice
+    [ String . pack <$> (char '"' *> many stringChar <* char '"') <?> "String",
+      Float <$> try (L.signed (return ()) L.float) <?> "Float",
+      Int <$> try (L.signed (return ()) L.decimal) <?> "Int",
+      SExp <$> parseSeq "(" ")" <?> "S-Expression",
+      List <$> parseSeq "[" "]" <?> "List",
+      Set <$> parseSeq "{" "}" <?> "Set",
+      hashed <$> (char '#' *> pExpr) <?> "Hashed expression",
+      prefix "quote" <$> (char '\'' *> pExpr) <?> "Quoted expression",
+      symbol <$> some allowedChar <?> "Symbol"
+    ]
+    <?> "Expression"
+  where
+    parseSeq :: String -> String -> Parser [Lisp]
+    parseSeq open close = string open *> sc *> many (pExpr <* sc) <* string close
+    prefix x y = SExp [Symbol (pack x), y]
 
-readProgram = parse program
+symbol :: String -> Lisp
+symbol "None" = None
+symbol "True" = Bool True
+symbol "False" = Bool False
+symbol x = Symbol (pack x)
 
-prefix :: Text -> Lisp -> Lisp
-prefix x y = SExp [Symbol x, y]
+pProgram :: Parser [Lisp]
+pProgram = sc *> many (pExpr <* sc) <* eof
+
+readProgram = parse pProgram

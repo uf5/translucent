@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module AstJson where
 
 import Data.Aeson hiding (Bool, String)

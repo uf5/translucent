@@ -67,6 +67,7 @@ data Expression
   | List {elts :: [Expression], ctx :: ExpressionContext}
   | Tuple {elts :: [Expression], ctx :: ExpressionContext}
   | IfExp {test :: Expression, body :: Expression, orelse :: Expression}
+  | Dict {keys :: [Expression], values :: [Expression]}
   deriving (Eq, Show, Generic)
 
 data Arguments = Arguments {posonlyargs :: [Arg], args :: [Arg], vararg :: Maybe Arg, kwonlyargs :: [Arg], kw_defaults :: [Expression], kwarg :: Maybe Arg, defaults :: [Expression]}

@@ -1,10 +1,10 @@
 module Language.Translucent.Exceptions where
 
 import Control.Monad.Except
-import Text.Parsec (ParseError)
+import Data.Ord
 
 type TransExceptT m = ExceptT TransException m
 
-data TransException
+newtype TransException
   = TransError String
   deriving (Show)

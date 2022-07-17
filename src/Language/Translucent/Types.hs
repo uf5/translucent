@@ -14,6 +14,7 @@ data Lisp
   | List [Lisp]
   | Tuple [Lisp]
   | Set [Lisp]
+  | Dict [Lisp] [Lisp]
 
 instance Show Lisp where
   show None = "None"
@@ -27,3 +28,4 @@ instance Show Lisp where
   show (List x) = "[" ++ unwords (map show x) ++ "]"
   show (Tuple x) = "#(" ++ unwords (map show x) ++ ")"
   show (Set x) = "{" ++ unwords (map show x) ++ "}"
+  show (Dict keys values) = "#{" ++ unwords (zipWith (\k v -> show k ++ " " ++ show v) keys values) ++ "}"

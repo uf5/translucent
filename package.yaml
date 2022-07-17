@@ -23,8 +23,8 @@ library:
   source-dirs: src
   dependencies:
   - charset
+  - megaparsec
   - mtl
-  - parsec
   - unordered-containers
 
 executables:
