@@ -58,6 +58,9 @@ trans (T.Int x) = return $ Constant $ P.Int x
 trans (T.Float x) = return $ Constant $ P.Float x
 trans (T.String x) = return $ Constant $ P.String x
 trans (T.Symbol x) = mangle x <&> (`P.Name` P.Load)
+trans (T.List x) =
+  mapM trans x
+    >>= \elts -> return (P.List elts P.Load)
 trans (T.SExp (h : t)) = case lookupForm h of
   (Just form) -> form t
   Nothing -> do

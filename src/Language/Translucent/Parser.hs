@@ -16,14 +16,21 @@ allowedChar :: Parser Char
 allowedChar = noneOf "\n\r\t \"#(),;[\\]{}"
 
 stringChar :: Parser Char
-stringChar = escapeChar <$> (char '\\' *> printChar) <|> anySingleBut '"'
+stringChar = escapeChar <|> anySingleBut '"'
 
-escapeChar :: Char -> Char
-escapeChar 'n' = '\n'
-escapeChar 'r' = '\r'
-escapeChar '\\' = '\\'
-escapeChar '"' = '"'
-escapeChar x = error ("Unknown escape character: " ++ show x)
+escapeChar :: Parser Char
+escapeChar =
+  char '\\'
+    *> choice
+      [ esc '\n' 'n',
+        esc '\r' 'r',
+        same '\\',
+        same '"'
+      ]
+  where
+    esc :: Char -> Char -> Parser Char
+    esc x y = x <$ char y
+    same x = esc x x
 
 hashed :: Lisp -> Lisp
 hashed (SExp values) = Tuple values
