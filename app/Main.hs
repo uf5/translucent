@@ -5,8 +5,7 @@ module Main where
 import AstJson ()
 import Data.Aeson (encode)
 import qualified Data.ByteString.Lazy.Char8 as B
-import Language.Translucent.Parser
-import Language.Translucent.Trans
+import Language.Translucent
 
 -- TODO: ugly
 
