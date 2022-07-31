@@ -1,5 +1,7 @@
-module Language.Translucent.Parser (readProgram) where
+module Language.Translucent.Parser (readProgram, pyIdent) where
 
+import Data.Char (GeneralCategory (..), generalCategory)
+import qualified Data.Set as S
 import Data.Text (Text, pack)
 import Data.Void (Void)
 import Language.Translucent.Types
@@ -9,8 +11,17 @@ import qualified Text.Megaparsec.Char.Lexer as L
 
 type Parser = Parsec Void String
 
+type LParser a = Parsec Void String (Location -> a)
+
 sc :: Parser ()
 sc = L.space space1 (L.skipLineComment ";") empty
+
+withLocation :: Parser (Location -> a) -> Parser a
+withLocation parser = do
+  start <- getSourcePos
+  p <- parser
+  end <- getSourcePos
+  return $ p (Location start end)
 
 allowedChar :: Parser Char
 allowedChar = noneOf "\n\r\t \"#(),;[\\]{}"
@@ -32,47 +43,79 @@ escapeChar =
     esc x y = x <$ char y
     same x = esc x x
 
-hashed :: Lisp -> Lisp
-hashed (SExp values) = Tuple values
-hashed (Set values) = mkDict values
+parseSeq open close = char open *> sc *> many (pExpr <* sc) <* char close
+
+prefix x expr loc = SExp loc [Symbol Generated (pack x), expr]
+
+strTypeHelper x str loc = x loc (pack str)
+
+hashOpen = char '#'
+
+pSExp :: LParser Lisp
+pSExp = flip SExp <$> parseSeq '(' ')' <?> "SExp"
+
+pList :: LParser Lisp
+pList = flip SExp <$> parseSeq '[' ']' <?> "List"
+
+pSet :: LParser Lisp
+pSet = flip SExp <$> parseSeq '{' '}' <?> "Set"
+
+pDict :: LParser Lisp
+pDict = (\elts loc -> uncurry (Dict loc) (evensAndOdds elts)) <$> (hashOpen >> parseSeq '{' '}')
   where
-    mkDict :: [Lisp] -> Lisp
-    mkDict x
-      | even (length x) = let (values, keys) = evensAndOdds x in Dict keys values
-      | otherwise = undefined
+    evensAndOdds :: [a] -> ([a], [a])
+    evensAndOdds = foldr f ([], [])
       where
-        evensAndOdds :: [a] -> ([a], [a])
-        evensAndOdds = foldr f ([], [])
-          where
-            f a (ls, rs) = (rs, a : ls)
-hashed _ = undefined
+        f a (ls, rs) = (a : rs, ls)
+
+pTuple :: LParser Lisp
+pTuple = flip Tuple <$> (hashOpen >> parseSeq '(' ')') <?> "Tuple"
+
+pInt :: LParser Lisp
+pInt = flip Int <$> try (L.signed (return ()) L.decimal) <?> "Float"
+
+pFloat :: LParser Lisp
+pFloat = flip Float <$> try (L.signed (return ()) L.float) <?> "Float"
+
+pSymbol :: LParser Lisp
+pSymbol = strTypeHelper Symbol <$> some allowedChar <?> "Symbol"
+
+pString :: LParser Lisp
+pString = strTypeHelper String <$> (char '"' *> many stringChar <* char '"') <?> "String"
+
+pKeyword :: LParser Lisp
+pKeyword = strTypeHelper Keyword <$> (char ':' *> pyIdent) <?> "Keyword"
+
+pQuote :: LParser Lisp
+pQuote = prefix "quote" <$> (char '\'' *> pExpr) <?> "Quoted expression"
 
 pExpr :: Parser Lisp
 pExpr =
-  choice
-    [ String . pack <$> (char '"' *> many stringChar <* char '"') <?> "String",
-      Float <$> try (L.signed (return ()) L.float) <?> "Float",
-      Int <$> try (L.signed (return ()) L.decimal) <?> "Int",
-      SExp <$> parseSeq "(" ")" <?> "S-Expression",
-      List <$> parseSeq "[" "]" <?> "List",
-      Set <$> parseSeq "{" "}" <?> "Set",
-      hashed <$> (char '#' *> pExpr) <?> "Hashed expression",
-      prefix "quote" <$> (char '\'' *> pExpr) <?> "Quoted expression",
-      symbol <$> some allowedChar <?> "Symbol"
-    ]
-    <?> "Expression"
-  where
-    parseSeq :: String -> String -> Parser [Lisp]
-    parseSeq open close = string open *> sc *> many (pExpr <* sc) <* string close
-    prefix x y = SExp [Symbol (pack x), y]
-
-symbol :: String -> Lisp
-symbol "None" = None
-symbol "True" = Bool True
-symbol "False" = Bool False
-symbol x = Symbol (pack x)
+  withLocation $
+    choice
+      [ pString,
+        pFloat,
+        pInt,
+        pSExp,
+        pList,
+        pSet,
+        pTuple,
+        pDict,
+        pQuote,
+        pKeyword,
+        pSymbol
+      ]
 
 pProgram :: Parser [Lisp]
 pProgram = sc *> many (pExpr <* sc) <* eof
 
 readProgram = parse pProgram
+
+pyIdent :: Parser String
+pyIdent = do
+  start <- satisfy ((`S.member` id_start) . generalCategory)
+  continue <- many (satisfy ((`S.member` id_continue) . generalCategory))
+  return (start : continue)
+  where
+    id_start = S.fromList [UppercaseLetter, LowercaseLetter, TitlecaseLetter, ModifierLetter, OtherLetter, LetterNumber]
+    id_continue = id_start <> S.fromList [NonSpacingMark, SpacingCombiningMark, DecimalNumber, ConnectorPunctuation]

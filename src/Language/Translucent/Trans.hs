@@ -7,8 +7,8 @@ import Control.Monad.Except
 import Control.Monad.Writer
 import Data.Functor
 import Data.Functor.Identity
-import Data.HashMap.Lazy (HashMap)
-import qualified Data.HashMap.Lazy as HM
+import Data.Map (Map)
+import qualified Data.Map as M
 import Data.Text (Text)
 import Language.Translucent.Exceptions
 import Language.Translucent.Mangler
@@ -18,9 +18,9 @@ import Language.Translucent.Types as T
 
 type WrappedResult = ResultT (ManglerT (TransExceptT Identity))
 
-forms :: HashMap Text ([Lisp] -> WrappedResult)
+forms :: Map Text ([Lisp] -> WrappedResult)
 forms =
-  HM.fromList
+  M.fromList
     [ ( "do",
         foldl1 comb . map trans
       ),
@@ -28,7 +28,7 @@ forms =
         fnbody . foldl1 comb . map trans
       ),
       ( "set!",
-        \[Symbol name, value] -> do
+        \[Symbol _ name, value] -> do
           value <- trans value
           writer (Constant P.None, [Assign [P.Name name P.Store] value Nothing])
       ),
@@ -52,16 +52,16 @@ forms =
     ]
 
 trans :: Lisp -> WrappedResult
-trans T.None = return $ Constant P.None
-trans (T.Bool x) = return $ Constant $ P.Bool x
-trans (T.Int x) = return $ Constant $ P.Int x
-trans (T.Float x) = return $ Constant $ P.Float x
-trans (T.String x) = return $ Constant $ P.String x
-trans (T.Symbol x) = mangle x <&> (`P.Name` P.Load)
-trans (T.List x) =
+trans (T.None _) = return $ Constant P.None
+trans (T.Bool _ x) = return $ Constant $ P.Bool x
+trans (T.Int _ x) = return $ Constant $ P.Int x
+trans (T.Float _ x) = return $ Constant $ P.Float x
+trans (T.String _ x) = return $ Constant $ P.String x
+trans (T.Symbol _ x) = mangle x <&> (`P.Name` P.Load)
+trans (T.List _ x) =
   mapM trans x
     >>= \elts -> return (P.List elts P.Load)
-trans (T.SExp (h : t)) = case lookupForm h of
+trans (T.SExp _ (h : t)) = case lookupForm h of
   (Just form) -> form t
   Nothing -> do
     fn <- trans h
@@ -69,7 +69,7 @@ trans (T.SExp (h : t)) = case lookupForm h of
     return $ Call fn args []
   where
     lookupForm h = case h of
-      (T.Symbol x) -> HM.lookup x forms
+      (T.Symbol _ x) -> M.lookup x forms
       _ -> Nothing
 trans x = throwError $ TransError ("unknown expression: " ++ show x)
 

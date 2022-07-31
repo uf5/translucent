@@ -12,17 +12,20 @@ module Language.Translucent.Mangler
 where
 
 import Control.Monad.State
-import Data.CharSet as CS
-import Data.CharSet.Unicode
-import Data.HashMap.Lazy as HM
-import Data.HashSet as HS
+import Data.Either (isRight)
 import Data.List as L (find)
+import Data.Map (Map)
+import qualified Data.Map as M
 import Data.Maybe (fromJust)
+import Data.Set (Set)
+import qualified Data.Set as S
 import Data.Text
+import Language.Translucent.Parser (pyIdent)
+import Text.Megaparsec (MonadParsec (eof), runParser)
 
 data ManglerState = ManglerState
-  { defined :: HashSet Text,
-    mangled :: HashMap Text Text,
+  { defined :: Set Text,
+    mangled :: Map Text Text,
     counter :: Integer
   }
 
@@ -40,13 +43,13 @@ genName =
               fromJust $
                 L.find
                   ( not
-                      . (`HS.member` def)
+                      . (`S.member` def)
                       . snd
                   )
                   (Prelude.map (\x -> (x, nameGenRule x)) [(counter manglerState) ..])
          in ( generatedName,
               manglerState
-                { defined = HS.insert generatedName def,
+                { defined = S.insert generatedName def,
                   counter = new_c + 1
                 }
             )
@@ -58,66 +61,21 @@ mangle x =
     (Just y) -> return y
     Nothing -> if isValidPythonId (unpack x) then return x else genName >>= putInMangled
   where
-    lookupMangled x = gets (HM.lookup x . mangled)
+    lookupMangled x = gets (M.lookup x . mangled)
     putInMangled n =
       state
         ( \s ->
             ( n,
               s
-                { defined = HS.insert n (defined s),
-                  mangled = HM.insert x n (mangled s)
+                { defined = S.insert n (defined s),
+                  mangled = M.insert x n (mangled s)
                 }
             )
         )
 
 isValidPythonId :: String -> Bool
 isValidPythonId "" = error "Got an empty identifier"
-isValidPythonId x =
-  not (HS.member x keywords)
-    && let (start : continue) = x
-        in CS.member start id_start && Prelude.all (`CS.member` id_continue) continue
-  where
-    id_start = uppercaseLetter <> lowercaseLetter <> titlecaseLetter <> modifierLetter <> otherLetter <> letterNumber
-    id_continue = id_start <> nonSpacingMark <> spacingCombiningMark <> decimalNumber <> connectorPunctuation
-    -- Python 3.10 keywords
-    keywords =
-      HS.fromList
-        [ "False",
-          "await",
-          "else",
-          "import",
-          "pass",
-          "None",
-          "break",
-          "except",
-          "in",
-          "raise",
-          "True",
-          "class",
-          "finally",
-          "is",
-          "return",
-          "and",
-          "continue",
-          "for",
-          "lambda",
-          "try",
-          "as",
-          "def",
-          "from",
-          "nonlocal",
-          "while",
-          "assert",
-          "del",
-          "global",
-          "not",
-          "with",
-          "async",
-          "elif",
-          "if",
-          "or",
-          "yield"
-        ]
+isValidPythonId x = isRight $ runParser (pyIdent <* eof) "" x
 
 evalMangler :: Monad m => ManglerT m a -> m a
-evalMangler = (`evalStateT` ManglerState HS.empty HM.empty 0)
+evalMangler = (`evalStateT` ManglerState S.empty M.empty 0)

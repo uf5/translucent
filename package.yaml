@@ -22,10 +22,9 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
-  - charset
   - megaparsec
   - mtl
-  - unordered-containers
+  - containers
 
 executables:
   translucent-exe:

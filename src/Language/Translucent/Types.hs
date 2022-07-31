@@ -1,31 +1,36 @@
 module Language.Translucent.Types where
 
 import Data.Text (Text, unpack)
+import Text.Megaparsec (SourcePos)
+
+data Location
+  = Location {start :: SourcePos, end :: SourcePos}
+  | Generated
 
 data Lisp
-  = None
-  | Bool Bool
-  | Int Integer
-  | Float Float
-  | String Text
-  | Symbol Text
-  | Keyword Text
-  | SExp [Lisp]
-  | List [Lisp]
-  | Tuple [Lisp]
-  | Set [Lisp]
-  | Dict [Lisp] [Lisp]
+  = None Location
+  | Bool Location Bool
+  | Int Location Integer
+  | Float Location Float
+  | String Location Text
+  | Symbol Location Text
+  | Keyword Location Text
+  | SExp Location [Lisp]
+  | List Location [Lisp]
+  | Tuple Location [Lisp]
+  | Set Location [Lisp]
+  | Dict Location [Lisp] [Lisp]
 
 instance Show Lisp where
-  show None = "None"
-  show (Bool x) = show x
-  show (Int x) = show x
-  show (Float x) = show x
-  show (String x) = show x
-  show (Symbol x) = unpack x
-  show (Keyword x) = ":" ++ unpack x
-  show (SExp x) = "(" ++ unwords (map show x) ++ ")"
-  show (List x) = "[" ++ unwords (map show x) ++ "]"
-  show (Tuple x) = "#(" ++ unwords (map show x) ++ ")"
-  show (Set x) = "{" ++ unwords (map show x) ++ "}"
-  show (Dict keys values) = "#{" ++ unwords (zipWith (\k v -> show k ++ " " ++ show v) keys values) ++ "}"
+  show (None _) = "None"
+  show (Bool _ x) = show x
+  show (Int _ x) = show x
+  show (Float _ x) = show x
+  show (String _ x) = show x
+  show (Symbol _ x) = unpack x
+  show (Keyword _ x) = ":" ++ unpack x
+  show (SExp _ x) = "(" ++ unwords (map show x) ++ ")"
+  show (List _ x) = "[" ++ unwords (map show x) ++ "]"
+  show (Tuple _ x) = "#(" ++ unwords (map show x) ++ ")"
+  show (Set _ x) = "{" ++ unwords (map show x) ++ "}"
+  show (Dict _ keys values) = "#{" ++ unwords (zipWith (\k v -> show k ++ " " ++ show v) keys values) ++ "}"
