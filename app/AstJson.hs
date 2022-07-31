@@ -2,29 +2,34 @@
 
 module AstJson where
 
-import Data.Aeson hiding (Bool, String)
+import Data.Aeson
+  ( Options (..),
+    ToJSON,
+    Value (Null),
+    defaultOptions,
+    genericToEncoding,
+    toEncoding,
+    toJSON,
+  )
 import Data.Char (toLower)
 import Language.Translucent.PythonAst
 
-lowerOptions :: Options
-lowerOptions =
+jsonOptions :: Options
+jsonOptions =
   defaultOptions
     { tagSingleConstructors = True,
-      constructorTagModifier = map toLower
+      allNullaryToStringTag = False,
+      fieldLabelModifier = stripFn
     }
-
-tagSingleOptions :: Options
-tagSingleOptions = defaultOptions {tagSingleConstructors = True}
-
-tagNullaryOptions :: Options
-tagNullaryOptions = defaultOptions {allNullaryToStringTag = False}
-
-leadingUnderscoreOptions :: Options
-leadingUnderscoreOptions =
-  defaultOptions {fieldLabelModifier = stripFn}
   where
     stripFn ('_' : x) = x
     stripFn x = x
+
+jsonOptionsLowerConstructor :: Options
+jsonOptionsLowerConstructor =
+  jsonOptions
+    { constructorTagModifier = map toLower
+    }
 
 instance ToJSON Const where
   toJSON None = Null
@@ -34,28 +39,28 @@ instance ToJSON Const where
   toJSON (String v) = toJSON v
 
 instance ToJSON Expression where
-  toEncoding = genericToEncoding leadingUnderscoreOptions
+  toEncoding = genericToEncoding jsonOptions
 
 instance ToJSON Statement where
-  toEncoding = genericToEncoding defaultOptions
+  toEncoding = genericToEncoding jsonOptions
 
 instance ToJSON Module where
-  toEncoding = genericToEncoding tagSingleOptions
+  toEncoding = genericToEncoding jsonOptions
 
 instance ToJSON Keyword where
-  toEncoding = genericToEncoding defaultOptions
+  toEncoding = genericToEncoding jsonOptions
 
 instance ToJSON Arguments where
-  toEncoding = genericToEncoding lowerOptions
+  toEncoding = genericToEncoding jsonOptionsLowerConstructor
 
 instance ToJSON Arg where
-  toEncoding = genericToEncoding lowerOptions
+  toEncoding = genericToEncoding jsonOptionsLowerConstructor
 
 instance ToJSON ExpressionContext where
-  toEncoding = genericToEncoding tagNullaryOptions
+  toEncoding = genericToEncoding jsonOptions
 
 instance ToJSON BinaryOperator where
-  toEncoding = genericToEncoding tagNullaryOptions
+  toEncoding = genericToEncoding jsonOptions
 
 instance ToJSON CmpOp where
-  toEncoding = genericToEncoding tagNullaryOptions
+  toEncoding = genericToEncoding jsonOptions

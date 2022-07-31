@@ -12,7 +12,7 @@ import qualified Data.Map as M
 import Data.Text (Text)
 import Language.Translucent.Exceptions
 import Language.Translucent.Mangler
-import Language.Translucent.PythonAst as P hiding (id)
+import Language.Translucent.PythonAst as P
 import Language.Translucent.Result
 import Language.Translucent.Types as T
 

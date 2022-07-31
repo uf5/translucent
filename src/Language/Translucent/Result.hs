@@ -13,7 +13,7 @@ import Control.Monad.Identity (Identity)
 import Control.Monad.Writer
 import Data.Functor ((<&>))
 import Language.Translucent.Mangler
-import Language.Translucent.PythonAst hiding (body, id)
+import Language.Translucent.PythonAst
 
 type ResultT m = WriterT [Statement] m Expression
 

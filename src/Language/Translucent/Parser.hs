@@ -1,4 +1,4 @@
-module Language.Translucent.Parser (readProgram, pyIdent) where
+module Language.Translucent.Parser (readProgram) where
 
 import Data.Char (GeneralCategory (..), generalCategory)
 import qualified Data.Set as S
@@ -84,7 +84,7 @@ pString :: LParser Lisp
 pString = strTypeHelper String <$> (char '"' *> many stringChar <* char '"') <?> "String"
 
 pKeyword :: LParser Lisp
-pKeyword = strTypeHelper Keyword <$> (char ':' *> pyIdent) <?> "Keyword"
+pKeyword = strTypeHelper Keyword <$> (char ':' *> some allowedChar) <?> "Keyword"
 
 pQuote :: LParser Lisp
 pQuote = prefix "quote" <$> (char '\'' *> pExpr) <?> "Quoted expression"
@@ -110,12 +110,3 @@ pProgram :: Parser [Lisp]
 pProgram = sc *> many (pExpr <* sc) <* eof
 
 readProgram = parse pProgram
-
-pyIdent :: Parser String
-pyIdent = do
-  start <- satisfy ((`S.member` id_start) . generalCategory)
-  continue <- many (satisfy ((`S.member` id_continue) . generalCategory))
-  return (start : continue)
-  where
-    id_start = S.fromList [UppercaseLetter, LowercaseLetter, TitlecaseLetter, ModifierLetter, OtherLetter, LetterNumber]
-    id_continue = id_start <> S.fromList [NonSpacingMark, SpacingCombiningMark, DecimalNumber, ConnectorPunctuation]

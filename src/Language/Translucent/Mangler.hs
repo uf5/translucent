@@ -12,16 +12,17 @@ module Language.Translucent.Mangler
 where
 
 import Control.Monad.State
+import Data.Char (GeneralCategory (..), generalCategory)
 import Data.Either (isRight)
-import Data.List as L (find)
+import Data.List as L
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (fromJust)
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Text
-import Language.Translucent.Parser (pyIdent)
-import Text.Megaparsec (MonadParsec (eof), runParser)
+import Data.Text (Text, pack, unpack)
+import Data.Void (Void)
+import Text.Megaparsec
 
 data ManglerState = ManglerState
   { defined :: Set Text,
@@ -37,23 +38,18 @@ nameGenRule x = "__tr_gen_n" <> pack (show x)
 genName :: MonadState ManglerState m => m Text
 genName =
   state
-    ( \manglerState ->
-        let def = defined manglerState
-            (new_c, generatedName) =
-              fromJust $
-                L.find
-                  ( not
-                      . (`S.member` def)
-                      . snd
-                  )
-                  (Prelude.map (\x -> (x, nameGenRule x)) [(counter manglerState) ..])
+    ( \s ->
+        let (c, generatedName) = findValidName (defined s) (counter s)
          in ( generatedName,
-              manglerState
-                { defined = S.insert generatedName def,
-                  counter = new_c + 1
+              s
+                { defined = S.insert generatedName (defined s),
+                  counter = c + 1
                 }
             )
     )
+  where
+    nameAndCounterIter counter = map (\x -> (x, nameGenRule x)) [counter ..]
+    findValidName defined counter = fromJust $ L.find (not . (`S.member` defined) . snd) (nameAndCounterIter counter)
 
 mangle :: MonadState ManglerState m => Text -> m Text
 mangle x =
@@ -73,9 +69,57 @@ mangle x =
             )
         )
 
-isValidPythonId :: String -> Bool
-isValidPythonId "" = error "Got an empty identifier"
-isValidPythonId x = isRight $ runParser (pyIdent <* eof) "" x
-
 evalMangler :: Monad m => ManglerT m a -> m a
 evalMangler = (`evalStateT` ManglerState S.empty M.empty 0)
+
+pyIdent :: Parsec Void String String
+pyIdent = do
+  start <- satisfy ((`S.member` id_start) . generalCategory)
+  continue <- many (satisfy ((`S.member` id_continue) . generalCategory))
+  return (start : continue)
+  where
+    id_start = S.fromList [UppercaseLetter, LowercaseLetter, TitlecaseLetter, ModifierLetter, OtherLetter, LetterNumber]
+    id_continue = id_start <> S.fromList [NonSpacingMark, SpacingCombiningMark, DecimalNumber, ConnectorPunctuation]
+
+isValidPythonId :: String -> Bool
+isValidPythonId "" = error "Got an empty identifier"
+isValidPythonId x = not (S.member x reserved_keywords) && isRight (runParser (pyIdent <* eof) "" x)
+  where
+    reserved_keywords =
+      S.fromList
+        [ "False",
+          "await",
+          "else",
+          "import",
+          "pass",
+          "None",
+          "break",
+          "except",
+          "in",
+          "raise",
+          "True",
+          "class",
+          "finally",
+          "is",
+          "return",
+          "and",
+          "continue",
+          "for",
+          "lambda",
+          "try",
+          "as",
+          "def",
+          "from",
+          "nonlocal",
+          "while",
+          "assert",
+          "del",
+          "global",
+          "not",
+          "with",
+          "async",
+          "elif",
+          "if",
+          "or",
+          "yield"
+        ]
