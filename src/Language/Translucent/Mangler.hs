@@ -39,14 +39,7 @@ genName =
   state
     ( \manglerState ->
         let def = defined manglerState
-            (new_c, generatedName) =
-              fromJust $
-                L.find
-                  ( not
-                      . (`S.member` def)
-                      . snd
-                  )
-                  (Prelude.map (\x -> (x, nameGenRule x)) [(counter manglerState) ..])
+            (new_c, generatedName) = getName def (counter manglerState)
          in ( generatedName,
               manglerState
                 { defined = S.insert generatedName def,
@@ -54,6 +47,9 @@ genName =
                 }
             )
     )
+  where
+    -- increase mangler's internal counter until there is a name that is not defined
+    getName def c = fromJust $ L.find (not . (`S.member` def) . snd) (Prelude.map (\x -> (x, nameGenRule x)) [c ..])
 
 mangle :: MonadState ManglerState m => Text -> m Text
 mangle x =
@@ -64,11 +60,11 @@ mangle x =
     lookupMangled x = gets (M.lookup x . mangled)
     putInMangled n =
       state
-        ( \s ->
+        ( \manglerState ->
             ( n,
-              s
-                { defined = S.insert n (defined s),
-                  mangled = M.insert x n (mangled s)
+              manglerState
+                { defined = S.insert n (defined manglerState),
+                  mangled = M.insert x n (mangled manglerState)
                 }
             )
         )

@@ -8,7 +8,7 @@ import GHC.Generics (Generic)
 
 -- See <https://docs.python.org/3/library/ast.html> for more information
 
-data Module = Module {body :: [Statement], type_ignores :: [Text]}
+data Module = Module {_body :: [Statement], _type_ignores :: [Text]}
   deriving (Eq, Show, Generic)
 
 data Keyword = Keyword Text Expression
@@ -23,57 +23,57 @@ data Const
   deriving (Eq, Show, Generic)
 
 data Statement
-  = Expr {value :: Expression}
-  | Return {value :: Expression}
+  = Expr {_value :: Expression}
+  | Return {_value :: Expression}
   | If
-      { test :: Expression,
-        body :: [Statement],
-        orelse :: [Statement]
+      { _test :: Expression,
+        _body :: [Statement],
+        _orelse :: [Statement]
       }
   | Assign
-      { targets :: [Expression],
-        value :: Expression,
-        type_comment :: Maybe Text
+      { _targets :: [Expression],
+        _value :: Expression,
+        _type_comment :: Maybe Text
       }
   | FunctionDef
-      { name :: Text,
-        args :: Arguments,
-        body :: [Statement],
-        decorator_list :: [Expression],
-        returns :: Maybe Expression,
-        type_comment :: Maybe Text
+      { _name :: Text,
+        _args :: Arguments,
+        _body :: [Statement],
+        _decorator_list :: [Expression],
+        _returns :: Maybe Expression,
+        _type_comment :: Maybe Text
       }
   | Pass
   deriving (Eq, Show, Generic)
 
 data Expression
-  = Constant {value :: Const}
-  | Name {id :: Text, ctx :: ExpressionContext}
+  = Constant {_value :: Const}
+  | Name {_id :: Text, _ctx :: ExpressionContext}
   | BinOp
-      { left :: Expression,
-        op :: BinaryOperator,
-        right :: Expression
+      { _left :: Expression,
+        _op :: BinaryOperator,
+        _right :: Expression
       }
   | Compare
-      { left :: Expression,
-        ops :: [CmpOp],
-        comparators :: [Expression]
+      { _left :: Expression,
+        _ops :: [CmpOp],
+        _comparators :: [Expression]
       }
   | Call
-      { func :: Expression,
-        args :: [Expression],
-        keywords :: [Keyword]
+      { _func :: Expression,
+        _args :: [Expression],
+        _keywords :: [Keyword]
       }
-  | List {elts :: [Expression], ctx :: ExpressionContext}
-  | Tuple {elts :: [Expression], ctx :: ExpressionContext}
-  | IfExp {test :: Expression, body :: Expression, orelse :: Expression}
-  | Dict {keys :: [Expression], values :: [Expression]}
+  | List {_elts :: [Expression], _ctx :: ExpressionContext}
+  | Tuple {_elts :: [Expression], _ctx :: ExpressionContext}
+  | IfExp {_test :: Expression, _body :: Expression, _orelse :: Expression}
+  | Dict {_keys :: [Expression], _values :: [Expression]}
   deriving (Eq, Show, Generic)
 
-data Arguments = Arguments {posonlyargs :: [Arg], args :: [Arg], vararg :: Maybe Arg, kwonlyargs :: [Arg], kw_defaults :: [Expression], kwarg :: Maybe Arg, defaults :: [Expression]}
+data Arguments = Arguments {_posonlyargs :: [Arg], _args :: [Arg], _vararg :: Maybe Arg, _kwonlyargs :: [Arg], _kw_defaults :: [Expression], _kwarg :: Maybe Arg, _defaults :: [Expression]}
   deriving (Eq, Show, Generic)
 
-data Arg = Arg {arg :: Text, annotation :: Maybe Expression, type_comment :: Maybe Text}
+data Arg = Arg {_arg :: Text, _annotation :: Maybe Expression, _type_comment :: Maybe Text}
   deriving (Eq, Show, Generic)
 
 data BinaryOperator
