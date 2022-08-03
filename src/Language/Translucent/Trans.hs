@@ -4,50 +4,66 @@
 module Language.Translucent.Trans (trans, transStmts, transModule) where
 
 import Control.Monad.Except
+import Control.Monad.Reader
 import Control.Monad.Writer
 import Data.Functor
 import Data.Functor.Identity
 import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Text (Text)
+import Data.Text (Text, pack)
+import Language.Translucent.Context
 import Language.Translucent.Exceptions
 import Language.Translucent.Mangler
 import Language.Translucent.PythonAst as P
 import Language.Translucent.Result
 import Language.Translucent.Types as T
 
-type WrappedResult = ResultT (ManglerT (TransExceptT Identity))
+type WrappedResult = ResultT (ManglerT (TransExceptT (ContextT Identity)))
 
 forms :: Map Text ([Lisp] -> WrappedResult)
 forms =
   M.fromList
     [ ( "do",
-        foldl1 comb . map trans
-      ),
-      ( "do-fn",
-        fnbody . foldl1 comb . map trans
+        \lispBody -> do
+          ContextState {preferStmt = pref} <- ask
+          ( if pref
+              then foldl1 comb . map trans
+              else fnbody . foldl1 comb . map trans
+            )
+            lispBody
       ),
       ( "set!",
         \[Symbol _ name, value] -> do
-          value <- trans value
+          value <- withPrefExpr $ trans value
           writer (Constant P.None, [Assign [P.Name name P.Store] value Nothing])
       ),
       ( "if",
         ( \[x, y, z] -> do
-            cond <- x
-            yy <- lift $ block y
-            zz <- lift $ block z
-            writer (Constant P.None, [If cond yy zz])
+            ContextState {preferStmt = pref} <- ask
+            cond <- withPrefExpr x
+            if pref
+              then do
+                yy <- lift $ block y
+                zz <- lift $ block z
+                writer (Constant P.None, [If cond yy zz])
+              else do
+                yy <- withPrefExpr y
+                zz <- withPrefExpr z
+                return (IfExp cond yy zz)
         )
           . map trans
       ),
-      -- TODO
       ( "=",
-        mapM trans
+        mapM (withPrefExpr . trans)
           >=> \case
             [] -> undefined
             [_] -> undefined
             (h : t) -> return $ Compare h (replicate (length t) Eq) t
+      ),
+      ( "ctx",
+        \_ -> do
+          ContextState {preferStmt = pref} <- ask
+          return $ Constant $ P.Bool pref
       )
     ]
 
@@ -58,14 +74,17 @@ trans (T.Int _ x) = return $ Constant $ P.Int x
 trans (T.Float _ x) = return $ Constant $ P.Float x
 trans (T.String _ x) = return $ Constant $ P.String x
 trans (T.Symbol _ x) = mangle x <&> (`P.Name` P.Load)
+trans (T.Tuple _ x) =
+  mapM (withPrefExpr . trans) x
+    >>= \elts -> return (P.Tuple elts P.Load)
 trans (T.List _ x) =
-  mapM trans x
+  mapM (withPrefExpr . trans) x
     >>= \elts -> return (P.List elts P.Load)
 trans (T.SExp _ (h : t)) = case lookupForm h of
   (Just form) -> form t
   Nothing -> do
-    fn <- trans h
-    args <- mapM trans t
+    fn <- withPrefExpr (trans h)
+    args <- mapM (withPrefExpr . trans) t
     return $ Call fn args []
   where
     lookupForm h = case h of
@@ -74,7 +93,7 @@ trans (T.SExp _ (h : t)) = case lookupForm h of
 trans x = throwError $ TransError ("unknown expression: " ++ show x)
 
 transStmts :: [Lisp] -> Either TransException [Statement]
-transStmts = runIdentity . runExceptT . evalMangler . block . foldl1 comb . map trans
+transStmts = runIdentity . runContext . runExceptT . runMangler . block . foldl1 comb . map trans
 
 transModule :: [Lisp] -> Either TransException P.Module
 transModule x = transStmts x >>= Right . (`Module` [])

@@ -7,7 +7,7 @@ module Language.Translucent.Mangler
     ManglerState,
     genName,
     mangle,
-    evalMangler,
+    runMangler,
   )
 where
 
@@ -69,8 +69,8 @@ mangle x =
             )
         )
 
-evalMangler :: Monad m => ManglerT m a -> m a
-evalMangler = (`evalStateT` ManglerState S.empty M.empty 0)
+runMangler :: Monad m => ManglerT m a -> m a
+runMangler = (`evalStateT` ManglerState S.empty M.empty 0)
 
 pyIdent :: Parsec Void String String
 pyIdent = do
