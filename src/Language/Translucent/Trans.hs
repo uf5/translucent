@@ -18,7 +18,7 @@ import Language.Translucent.PythonAst as P
 import Language.Translucent.Result
 import Language.Translucent.Types as T
 
-type WrappedResult = ResultT (ManglerT (TransExceptT (ContextT Identity)))
+type WrappedResult = ResultT (ManglerT (ContextT (TransExceptT Identity)))
 
 forms :: Map Text ([Lisp] -> WrappedResult)
 forms =
@@ -27,8 +27,8 @@ forms =
         \lispBody -> do
           ContextState {preferStmt = pref} <- ask
           ( if pref
-              then foldl1 comb . map trans
-              else fnbody . foldl1 comb . map trans
+              then foldl1 comb . map (withPrefStmt . trans)
+              else fnbody . foldl1 comb . map (withPrefStmt . trans)
             )
             lispBody
       ),
@@ -93,7 +93,7 @@ trans (T.SExp _ (h : t)) = case lookupForm h of
 trans x = throwError $ TransError ("unknown expression: " ++ show x)
 
 transStmts :: [Lisp] -> Either TransException [Statement]
-transStmts = runIdentity . runContext . runExceptT . runMangler . block . foldl1 comb . map trans
+transStmts = runIdentity . runExceptT . runContext . runMangler . block . foldl1 comb . map trans
 
 transModule :: [Lisp] -> Either TransException P.Module
 transModule x = transStmts x >>= Right . (`Module` [])
