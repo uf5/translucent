@@ -90,10 +90,10 @@ trans (T.SExp _ (h : t)) = case lookupForm h of
     lookupForm h = case h of
       (T.Symbol _ x) -> M.lookup x forms
       _ -> Nothing
-trans x = throwError $ TransError ("unknown expression: " ++ show x)
+trans x = throwTransError x ("Unknown expression: " <> show x)
 
-transStmts :: [Lisp] -> Either TransException [Statement]
+transStmts :: [Lisp] -> Either TransError [Statement]
 transStmts = runIdentity . runExceptT . runContext . runMangler . block . foldl1 comb . map trans
 
-transModule :: [Lisp] -> Either TransException P.Module
+transModule :: [Lisp] -> Either TransError P.Module
 transModule x = transStmts x >>= Right . (`Module` [])

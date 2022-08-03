@@ -13,7 +13,7 @@ main :: IO ()
 main =
   getContents
     >>= ( \case
-            (Left e) -> print e
+            (Left (TransError {message=msg})) -> putStrLn msg
             (Right x) -> B.putStrLn $ encode x
         )
       . transModule
