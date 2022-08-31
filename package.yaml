@@ -16,15 +16,14 @@ description:         Please see the README on GitHub at <https://github.com/uf5/
 
 dependencies:
 - base >= 4.7 && < 5
+- containers
 - text
-- template-haskell
+- megaparsec
 
 library:
   source-dirs: src
   dependencies:
-  - megaparsec
   - mtl
-  - containers
 
 executables:
   translucent-exe:
@@ -38,7 +37,6 @@ executables:
     dependencies:
     - aeson
     - bytestring
-    - template-haskell
     - translucent
 
 tests:

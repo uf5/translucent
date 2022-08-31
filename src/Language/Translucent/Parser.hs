@@ -4,24 +4,22 @@ import Data.Char (GeneralCategory (..), generalCategory)
 import qualified Data.Set as S
 import Data.Text (Text, pack)
 import Data.Void (Void)
-import Language.Translucent.Types
+import Language.Translucent.Lisp
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
+import Language.Translucent.ParserTypes
 
-type Parser = Parsec Void String
-
-type LParser a = Parsec Void String (Location -> a)
+type LParser a = Parser (Location -> a)
 
 sc :: Parser ()
 sc = L.space space1 (L.skipLineComment ";") empty
 
 withLocation :: Parser (Location -> a) -> Parser a
 withLocation parser = do
-  start <- getSourcePos
+  o <- getOffset
   p <- parser
-  end <- getSourcePos
-  return $ p (Location start end)
+  return $ p (Location o)
 
 allowedChar :: Parser Char
 allowedChar = noneOf "\n\r\t \"#(),;[\\]{}"
@@ -78,7 +76,12 @@ pFloat :: LParser Lisp
 pFloat = flip Float <$> try (L.signed (return ()) L.float) <?> "Float"
 
 pSymbol :: LParser Lisp
-pSymbol = strTypeHelper Symbol <$> some allowedChar <?> "Symbol"
+pSymbol = specialSymbols <$> some allowedChar <?> "Symbol"
+  where
+    specialSymbols "True" loc = Bool loc True
+    specialSymbols "False" loc = Bool loc False
+    specialSymbols "None" loc = None loc
+    specialSymbols str loc = Symbol loc (pack str)
 
 pString :: LParser Lisp
 pString = strTypeHelper String <$> (char '"' *> many stringChar <* char '"') <?> "String"
@@ -91,20 +94,22 @@ pQuote = prefix "quote" <$> (char '\'' *> pExpr) <?> "Quoted expression"
 
 pExpr :: Parser Lisp
 pExpr =
-  withLocation $
-    choice
-      [ pString,
-        pFloat,
-        pInt,
-        pSExp,
-        pList,
-        pSet,
-        pTuple,
-        pDict,
-        pQuote,
-        pKeyword,
-        pSymbol
-      ]
+  withLocation
+    ( choice
+        [ pString,
+          pFloat,
+          pInt,
+          pSExp,
+          pList,
+          pSet,
+          pTuple,
+          pDict,
+          pQuote,
+          pKeyword,
+          pSymbol
+        ]
+        <?> "Expression"
+    )
 
 pProgram :: Parser [Lisp]
 pProgram = sc *> many (pExpr <* sc) <* eof

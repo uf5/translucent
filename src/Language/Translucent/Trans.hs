@@ -16,7 +16,7 @@ import Language.Translucent.Exceptions
 import Language.Translucent.Mangler
 import Language.Translucent.PythonAst as P
 import Language.Translucent.Result
-import Language.Translucent.Types as T
+import Language.Translucent.Lisp as L
 
 type WrappedResult = ResultT (ManglerT (ContextT (TransExceptT Identity)))
 
@@ -68,19 +68,19 @@ forms =
     ]
 
 trans :: Lisp -> WrappedResult
-trans (T.None _) = return $ Constant P.None
-trans (T.Bool _ x) = return $ Constant $ P.Bool x
-trans (T.Int _ x) = return $ Constant $ P.Int x
-trans (T.Float _ x) = return $ Constant $ P.Float x
-trans (T.String _ x) = return $ Constant $ P.String x
-trans (T.Symbol _ x) = mangle x <&> (`P.Name` P.Load)
-trans (T.Tuple _ x) =
+trans (L.None _) = return $ Constant P.None
+trans (L.Bool _ x) = return $ Constant $ P.Bool x
+trans (L.Int _ x) = return $ Constant $ P.Int x
+trans (L.Float _ x) = return $ Constant $ P.Float x
+trans (L.String _ x) = return $ Constant $ P.String x
+trans (L.Symbol _ x) = mangle x <&> (`P.Name` P.Load)
+trans (L.Tuple _ x) =
   mapM (withPrefExpr . trans) x
     >>= \elts -> return (P.Tuple elts P.Load)
-trans (T.List _ x) =
+trans (L.List _ x) =
   mapM (withPrefExpr . trans) x
     >>= \elts -> return (P.List elts P.Load)
-trans (T.SExp _ (h : t)) = case lookupForm h of
+trans (L.SExp _ (h : t)) = case lookupForm h of
   (Just form) -> form t
   Nothing -> do
     fn <- withPrefExpr (trans h)
@@ -88,9 +88,9 @@ trans (T.SExp _ (h : t)) = case lookupForm h of
     return $ Call fn args []
   where
     lookupForm h = case h of
-      (T.Symbol _ x) -> M.lookup x forms
+      (L.Symbol _ x) -> M.lookup x forms
       _ -> Nothing
-trans x = throwTransError x ("Unknown expression: " <> show x)
+trans x = throwTransError (getLoc x) ("Unknown expression '" <> show x <> "'")
 
 transStmts :: [Lisp] -> Either TransError [Statement]
 transStmts = runIdentity . runExceptT . runContext . runMangler . block . foldl1 comb . map trans

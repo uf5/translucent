@@ -1,10 +1,16 @@
-module Language.Translucent.Types where
+module Language.Translucent.Lisp
+  ( Location (..),
+    Lisp (..),
+    getLoc,
+  )
+where
 
 import Data.Text (Text, unpack)
-import Text.Megaparsec (SourcePos)
+import Data.Void (Void)
+import Text.Megaparsec (PosState)
 
 data Location
-  = Location {start :: SourcePos, end :: SourcePos}
+  = Location {offset :: Int}
   | Generated
 
 data Lisp
@@ -34,3 +40,17 @@ instance Show Lisp where
   show (Tuple _ x) = "#(" ++ unwords (map show x) ++ ")"
   show (Set _ x) = "{" ++ unwords (map show x) ++ "}"
   show (Dict _ keys values) = "#{" ++ unwords (zipWith (\k v -> show k ++ " " ++ show v) keys values) ++ "}"
+
+getLoc :: Lisp -> Location
+getLoc (None loc) = loc
+getLoc (Bool loc _) = loc
+getLoc (Int loc _) = loc
+getLoc (Float loc _) = loc
+getLoc (String loc _) = loc
+getLoc (Symbol loc _) = loc
+getLoc (Keyword loc _) = loc
+getLoc (SExp loc _) = loc
+getLoc (List loc _) = loc
+getLoc (Tuple loc _) = loc
+getLoc (Set loc _) = loc
+getLoc (Dict loc _ _) = loc
