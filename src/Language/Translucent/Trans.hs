@@ -13,10 +13,10 @@ import qualified Data.Map as M
 import Data.Text (Text, pack)
 import Language.Translucent.Context
 import Language.Translucent.Exceptions
+import Language.Translucent.Lisp as L
 import Language.Translucent.Mangler
 import Language.Translucent.PythonAst as P
 import Language.Translucent.Result
-import Language.Translucent.Lisp as L
 
 type WrappedResult = ResultT (ManglerT (ContextT (TransExceptT Identity)))
 
@@ -24,13 +24,10 @@ forms :: Map Text ([Lisp] -> WrappedResult)
 forms =
   M.fromList
     [ ( "do",
-        \lispBody -> do
-          ContextState {preferStmt = pref} <- ask
-          ( if pref
-              then foldl1 comb . map (withPrefStmt . trans)
-              else fnbody . foldl1 comb . map (withPrefStmt . trans)
-            )
-            lispBody
+        \lispBody ->
+          ifPrefer
+            (foldl1 comb $ map (withPrefStmt . trans) lispBody)
+            (fnbody $ foldl1 comb $ map (withPrefStmt . trans) lispBody)
       ),
       ( "set!",
         \[Symbol _ name, value] -> do
@@ -39,17 +36,18 @@ forms =
       ),
       ( "if",
         ( \[x, y, z] -> do
-            ContextState {preferStmt = pref} <- ask
             cond <- withPrefExpr x
-            if pref
-              then do
-                yy <- lift $ block y
-                zz <- lift $ block z
-                writer (Constant P.None, [If cond yy zz])
-              else do
-                yy <- withPrefExpr y
-                zz <- withPrefExpr z
-                return (IfExp cond yy zz)
+            ifPrefer
+              ( do
+                  y' <- lift $ block y
+                  z' <- lift $ block z
+                  writer (Constant P.None, [If cond y' z'])
+              )
+              ( do
+                  y' <- withPrefExpr y
+                  z' <- withPrefExpr z
+                  return (IfExp cond y' z')
+              )
         )
           . map trans
       ),
@@ -60,10 +58,12 @@ forms =
             [_] -> undefined
             (h : t) -> return $ Compare h (replicate (length t) Eq) t
       ),
-      ( "ctx",
-        \_ -> do
-          ContextState {preferStmt = pref} <- ask
-          return $ Constant $ P.Bool pref
+      ( "quote!",
+        \[x] -> case x of
+          (SExp _ elts) -> do
+            elts' <- mapM (withPrefExpr . trans) elts
+            return $ P.Tuple elts' P.Load
+          _ -> trans x
       )
     ]
 
@@ -74,23 +74,39 @@ trans (L.Int _ x) = return $ Constant $ P.Int x
 trans (L.Float _ x) = return $ Constant $ P.Float x
 trans (L.String _ x) = return $ Constant $ P.String x
 trans (L.Symbol _ x) = mangle x <&> (`P.Name` P.Load)
-trans (L.Tuple _ x) =
-  mapM (withPrefExpr . trans) x
-    >>= \elts -> return (P.Tuple elts P.Load)
-trans (L.List _ x) =
-  mapM (withPrefExpr . trans) x
-    >>= \elts -> return (P.List elts P.Load)
+trans (L.List _ elts) = do
+  elts' <- mapM (withPrefExpr . trans) elts
+  return (P.List elts' P.Load)
 trans (L.SExp _ (h : t)) = case lookupForm h of
   (Just form) -> form t
   Nothing -> do
     fn <- withPrefExpr (trans h)
-    args <- mapM (withPrefExpr . trans) t
-    return $ Call fn args []
+
+    (args, kws) <- lift $ lift $ lift $ parse_args t
+    args' <- mapM (withPrefExpr . trans) args
+    let (uz_ids, uz_values) = unzip kws
+    kws_v' <- mapM (withPrefExpr . trans) uz_values
+    let kws' = zipWith P.Keyword uz_ids kws_v'
+    return (Call fn args' kws')
   where
     lookupForm h = case h of
       (L.Symbol _ x) -> M.lookup x forms
       _ -> Nothing
-trans x = throwTransError (getLoc x) ("Unknown expression '" <> show x <> "'")
+    -- split lisp args & keywords into separate lists of args and keywords
+    parse_args :: Monad m => [Lisp] -> TransExceptT m ([Lisp], [(Text, Lisp)])
+    parse_args ((L.Keyword loc kw) : t) = case t of
+      [] -> throwTransError loc "Keyword expression has no value"
+      (arg : t) -> do
+        t' <- parse_args t
+        return $ combine_tuples ([], [(kw, arg)]) t'
+    parse_args (arg : t) = do
+      t' <- parse_args t
+      return $ combine_tuples ([arg], []) t'
+    parse_args [] = return ([], [])
+    -- combine two tupled lists
+    combine_tuples (a1, b1) (a2, b2) = (a1 ++ a2, b1 ++ b2)
+trans (L.Keyword loc _) = throwTransError loc "Unexpected keyword expression"
+trans x = throwTransError (getLoc x) "Unknown expression"
 
 transStmts :: [Lisp] -> Either TransError [Statement]
 transStmts = runIdentity . runExceptT . runContext . runMangler . block . foldl1 comb . map trans

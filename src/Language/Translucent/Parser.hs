@@ -53,10 +53,10 @@ pSExp :: LParser Lisp
 pSExp = flip SExp <$> parseSeq '(' ')' <?> "SExp"
 
 pList :: LParser Lisp
-pList = flip SExp <$> parseSeq '[' ']' <?> "List"
+pList = flip List <$> parseSeq '[' ']' <?> "List"
 
 pSet :: LParser Lisp
-pSet = flip SExp <$> parseSeq '{' '}' <?> "Set"
+pSet = flip Set <$> parseSeq '{' '}' <?> "Set"
 
 pDict :: LParser Lisp
 pDict = (\elts loc -> uncurry (Dict loc) (evensAndOdds elts)) <$> (hashOpen >> parseSeq '{' '}')
@@ -65,9 +65,6 @@ pDict = (\elts loc -> uncurry (Dict loc) (evensAndOdds elts)) <$> (hashOpen >> p
     evensAndOdds = foldr f ([], [])
       where
         f a (ls, rs) = (a : rs, ls)
-
-pTuple :: LParser Lisp
-pTuple = flip Tuple <$> (hashOpen >> parseSeq '(' ')') <?> "Tuple"
 
 pInt :: LParser Lisp
 pInt = flip Int <$> try (L.signed (return ()) L.decimal) <?> "Float"
@@ -90,7 +87,7 @@ pKeyword :: LParser Lisp
 pKeyword = strTypeHelper Keyword <$> (char ':' *> some allowedChar) <?> "Keyword"
 
 pQuote :: LParser Lisp
-pQuote = prefix "quote" <$> (char '\'' *> pExpr) <?> "Quoted expression"
+pQuote = prefix "quote!" <$> (char '\'' *> pExpr) <?> "Quoted expression"
 
 pExpr :: Parser Lisp
 pExpr =
@@ -102,7 +99,6 @@ pExpr =
           pSExp,
           pList,
           pSet,
-          pTuple,
           pDict,
           pQuote,
           pKeyword,

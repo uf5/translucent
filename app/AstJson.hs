@@ -48,7 +48,7 @@ instance ToJSON Module where
   toEncoding = genericToEncoding jsonOptions
 
 instance ToJSON Keyword where
-  toEncoding = genericToEncoding jsonOptions
+  toEncoding = genericToEncoding jsonOptionsLowerConstructor
 
 instance ToJSON Arguments where
   toEncoding = genericToEncoding jsonOptionsLowerConstructor

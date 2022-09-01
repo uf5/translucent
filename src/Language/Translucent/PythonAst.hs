@@ -11,7 +11,10 @@ import GHC.Generics (Generic)
 data Module = Module {_body :: [Statement], _type_ignores :: [Text]}
   deriving (Eq, Show, Generic)
 
-data Keyword = Keyword Text Expression
+data Keyword = Keyword
+  { arg :: Text,
+    value :: Expression
+  }
   deriving (Eq, Show, Generic)
 
 data Const

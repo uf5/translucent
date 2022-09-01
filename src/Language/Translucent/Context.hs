@@ -6,6 +6,7 @@ module Language.Translucent.Context
     runContext,
     withPrefExpr,
     withPrefStmt,
+    ifPrefer,
   )
 where
 
@@ -22,6 +23,13 @@ runContext x = runReaderT x ContextState {preferStmt = True}
 
 preferStmtFn x s = s {preferStmt = x}
 
-withPrefStmt x = local (preferStmtFn True) x
+withPrefStmt :: MonadReader ContextState m => m a -> m a
+withPrefStmt = local (preferStmtFn True)
 
-withPrefExpr x = local (preferStmtFn False) x
+withPrefExpr :: MonadReader ContextState m => m a -> m a
+withPrefExpr = local (preferStmtFn False)
+
+ifPrefer :: MonadReader ContextState m => m b -> m b -> m b
+ifPrefer a b = do
+  ContextState {preferStmt = pref} <- ask
+  if pref then a else b
