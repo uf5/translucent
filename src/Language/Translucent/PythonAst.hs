@@ -52,6 +52,7 @@ data Statement
 data Expression
   = Constant {_value :: Const}
   | Name {_id :: Text, _ctx :: ExpressionContext}
+  | NamedExpr {_target :: Expression, value :: Expression}
   | BinOp
       { _left :: Expression,
         _op :: BinaryOperator,
