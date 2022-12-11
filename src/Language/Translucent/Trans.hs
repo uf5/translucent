@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Language.Translucent.Trans (trans, transStmts, transModule) where
@@ -39,6 +40,34 @@ pSymbol = Param p
     p (h : t) = Left $ WrongType (getLoc h)
     p [] = Left NotEnoughArguments
 
+pSymbolL :: Param Lisp
+pSymbolL = Param p
+  where
+    p (x@(Symbol _ _) : t) = Right (x, t)
+    p (h : t) = Left $ WrongType (getLoc h)
+    p [] = Left NotEnoughArguments
+
+pList :: Param [Lisp]
+pList = Param p
+  where
+    p ((L.List _ x) : t) = Right (x, t)
+    p (h : t) = Left $ WrongType (getLoc h)
+    p [] = Left NotEnoughArguments
+
+pSExp :: Param [Lisp]
+pSExp = Param p
+  where
+    p ((L.SExp _ x) : t) = Right (x, t)
+    p (h : t) = Left $ WrongType (getLoc h)
+    p [] = Left NotEnoughArguments
+
+pSExpL :: Param Lisp
+pSExpL = Param p
+  where
+    p (x@(L.SExp _ _) : t) = Right (x, t)
+    p (h : t) = Left $ WrongType (getLoc h)
+    p [] = Left NotEnoughArguments
+
 forms :: Map Text (Param WrappedResult)
 forms =
   M.fromList
@@ -57,7 +86,7 @@ forms =
               ( do
                   y' <- lift $ block y
                   z' <- lift $ block z
-                  writer (Constant P.None, [If cond y' z'])
+                  fromStmt $ If cond y' z'
               )
               ( do
                   y' <- withPrefExpr y
@@ -98,7 +127,7 @@ forms =
       ( "set!",
         ( \name value -> do
             value' <- value
-            writer (Constant P.None, [P.Assign [P.Name name P.Store] value' Nothing])
+            fromStmt $ P.Assign [P.Name name P.Store] value' Nothing
         )
           <$> pSymbol <*> pTrans
       ),
@@ -107,7 +136,24 @@ forms =
             target' <- target
             value' <- value
             return $ P.NamedExpr target' value'
-        ) <$> pTrans <*> pTrans
+        )
+          <$> pTrans
+          <*> pTrans
+      ),
+      -- function definitions
+      ( "def",
+        (\name args body -> undefined) <$> pSymbol <*> pList <*> many (withPrefStmt <$> pTrans)
+      ),
+      ( "import",
+        fromStmt
+          . P.Import
+          . map
+            ( \case
+                (L.Symbol _ x) -> P.Alias x Nothing
+                (L.SExp _ [L.Symbol _ x, L.Symbol _ y]) -> P.Alias x (Just y)
+                _ -> undefined
+            )
+          <$> some (pSymbolL <|> pSExpL)
       )
     ]
   where
@@ -118,6 +164,20 @@ forms =
     compHelper op =
       (\args -> sequence args <&> (\(h : t) -> P.Compare h (replicate (length t) op) t))
         <$> ((:) <$> pTransExpr <*> some pTransExpr)
+
+extractArgs :: [Lisp] -> Maybe ([Lisp], [(Text, Lisp)])
+extractArgs ((L.Keyword loc kw) : t) = case t of
+  [] -> Nothing
+  (arg : t) -> do
+    t' <- extractArgs t
+    return $ combineTuples ([], [(kw, arg)]) t'
+extractArgs (arg : rest) = do
+  rest' <- extractArgs rest
+  return $ combineTuples ([arg], []) rest'
+extractArgs [] = return ([], [])
+
+combineTuples :: ([a], [b]) -> ([a], [b]) -> ([a], [b])
+combineTuples (a1, b1) (a2, b2) = (a1 ++ a2, b1 ++ b2)
 
 trans :: Lisp -> WrappedResult
 trans (L.None _) = return $ Constant P.None
@@ -143,29 +203,19 @@ trans (L.SExp loc (h : t)) = case lookupForm h of
           (show err)
   Nothing -> do
     fn <- withPrefExpr (trans h)
-    (args, kws) <- lift $ lift $ lift $ parse_args t
-    args' <- mapM (withPrefExpr . trans) args
-    let (uz_ids, uz_values) = unzip kws
-    kws_v' <- mapM (withPrefExpr . trans) uz_values
-    let kws' = zipWith P.Keyword uz_ids kws_v'
-    return (Call fn args' kws')
+    let extracted = extractArgs t
+    case extracted of
+      Nothing -> throwTransError loc "Keyword expression has no value"
+      (Just (args, kws)) -> do
+        args' <- mapM (withPrefExpr . trans) args
+        let (uz_ids, uz_values) = unzip kws
+        kws_v' <- mapM (withPrefExpr . trans) uz_values
+        let kws' = zipWith P.Keyword uz_ids kws_v'
+        return (Call fn args' kws')
   where
     lookupForm h = case h of
       (L.Symbol _ x) -> M.lookup x forms
       _ -> Nothing
-    -- split lisp args & keywords into separate lists of args and keywords
-    parse_args :: Monad m => [Lisp] -> TransExceptT m ([Lisp], [(Text, Lisp)])
-    parse_args ((L.Keyword loc kw) : t) = case t of
-      [] -> throwTransError loc "Keyword expression has no value"
-      (arg : t) -> do
-        t' <- parse_args t
-        return $ combine_tuples ([], [(kw, arg)]) t'
-    parse_args (arg : rest) = do
-      rest' <- parse_args rest
-      return $ combine_tuples ([arg], []) rest'
-    parse_args [] = return ([], [])
-    -- combine two tupled lists
-    combine_tuples (a1, b1) (a2, b2) = (a1 ++ a2, b1 ++ b2)
 trans (L.Keyword loc _) = throwTransError loc "Unexpected keyword expression"
 trans x = throwTransError (getLoc x) "Unknown expression"
 

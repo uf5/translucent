@@ -17,6 +17,12 @@ data Keyword = Keyword
   }
   deriving (Eq, Show, Generic)
 
+data Alias = Alias
+  { _name :: Text,
+    _asname :: Maybe Text
+  }
+  deriving (Eq, Show, Generic)
+
 data Const
   = None
   | Bool Bool
@@ -45,6 +51,9 @@ data Statement
         _decorator_list :: [Expression],
         _returns :: Maybe Expression,
         _type_comment :: Maybe Text
+      }
+  | Import
+      { _names :: [Alias]
       }
   | Pass
   deriving (Eq, Show, Generic)

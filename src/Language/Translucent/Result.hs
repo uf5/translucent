@@ -6,6 +6,7 @@ module Language.Translucent.Result
     block,
     fnbody,
     comb,
+    fromStmt,
   )
 where
 
@@ -16,6 +17,9 @@ import Language.Translucent.Mangler
 import Language.Translucent.PythonAst
 
 type ResultT m = WriterT [Statement] m Expression
+
+fromStmt :: Monad m => Statement -> ResultT m
+fromStmt s = writer (Constant None, [s])
 
 block x = stmts Expr x
 
