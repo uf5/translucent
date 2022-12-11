@@ -196,10 +196,7 @@ trans (L.SExp loc (h : t)) = case lookupForm h of
       (Right (_, _)) -> throwTransError loc (show TooManyArguments)
       (Left err) ->
         throwTransError
-          ( case err of
-              (WrongType loc') -> loc'
-              _ -> loc
-          )
+          (getErrorLoc err loc)
           (show err)
   Nothing -> do
     fn <- withPrefExpr (trans h)
@@ -211,13 +208,19 @@ trans (L.SExp loc (h : t)) = case lookupForm h of
         let (uz_ids, uz_values) = unzip kws
         kws_v' <- mapM (withPrefExpr . trans) uz_values
         let kws' = zipWith P.Keyword uz_ids kws_v'
-        return (Call fn args' kws')
+        return $ Call fn args' kws'
   where
     lookupForm h = case h of
       (L.Symbol _ x) -> M.lookup x forms
       _ -> Nothing
-trans (L.Keyword loc _) = throwTransError loc "Unexpected keyword expression"
-trans x = throwTransError (getLoc x) "Unknown expression"
+    getErrorLoc (WrongType loc') _ = loc'
+    getErrorLoc _ fallback = fallback
+trans (L.Dict loc keys values) = do
+  keys' <- mapM (withPrefExpr . trans) keys
+  values' <- mapM (withPrefExpr . trans) values
+  return $ P.Dict keys' values'
+trans (L.Keyword _ x) = return $ Constant $ P.String x
+trans x = throwTransError (getLoc x) "Unimplemented expression"
 
 transStmts :: [Lisp] -> Either TransError [Statement]
 transStmts = runIdentity . runExceptT . runContext . runMangler . block . foldl1 comb . map trans

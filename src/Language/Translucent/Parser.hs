@@ -1,9 +1,6 @@
 module Language.Translucent.Parser (readProgram) where
 
-import Data.Char (GeneralCategory (..), generalCategory)
-import qualified Data.Set as S
 import Data.Text (Text, pack)
-import Data.Void (Void)
 import Language.Translucent.Lisp
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -47,19 +44,14 @@ prefix x expr loc = SExp loc [Symbol Generated (pack x), expr]
 
 strTypeHelper x str loc = x loc (pack str)
 
-hashOpen = char '#'
-
 pSExp :: LParser Lisp
 pSExp = flip SExp <$> parseSeq '(' ')' <?> "SExp"
 
 pList :: LParser Lisp
 pList = flip List <$> parseSeq '[' ']' <?> "List"
 
-pSet :: LParser Lisp
-pSet = flip Set <$> parseSeq '{' '}' <?> "Set"
-
 pDict :: LParser Lisp
-pDict = (\elts loc -> uncurry (Dict loc) (evensAndOdds elts)) <$> (hashOpen >> parseSeq '{' '}')
+pDict = (\elts loc -> uncurry (Dict loc) (evensAndOdds elts)) <$> parseSeq '{' '}'
   where
     evensAndOdds :: [a] -> ([a], [a])
     evensAndOdds = foldr f ([], [])
@@ -98,7 +90,6 @@ pExpr =
           pInt,
           pSExp,
           pList,
-          pSet,
           pDict,
           pQuote,
           pKeyword,
