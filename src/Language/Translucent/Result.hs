@@ -4,6 +4,7 @@
 module Language.Translucent.Result
   ( ResultT,
     block,
+    stmts,
     fnbody,
     comb,
     fromStmt,

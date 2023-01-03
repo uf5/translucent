@@ -47,12 +47,14 @@ pSymbolL = Param p
     p (h : t) = Left $ WrongType (getLoc h)
     p [] = Left NotEnoughArguments
 
-pList :: Param [Lisp]
-pList = Param p
+pList :: Param a -> Param [a]
+pList p = Param l
   where
-    p ((L.List _ x) : t) = Right (x, t)
-    p (h : t) = Left $ WrongType (getLoc h)
-    p [] = Left NotEnoughArguments
+    l ((L.List _ elts) : t) = do
+      (v, _) <- applyArgs (many p) elts
+      Right (v, t)
+    l (h : t) = Left $ WrongType (getLoc h)
+    l [] = Left NotEnoughArguments
 
 pSExp :: Param [Lisp]
 pSExp = Param p
@@ -142,7 +144,21 @@ forms =
       ),
       -- function definitions
       ( "def",
-        (\name args body -> undefined) <$> pSymbol <*> pList <*> many (withPrefStmt <$> pTrans)
+        ( \name args body -> WriterT $ do
+            body' <- stmts Return (foldl1 comb body)
+            return
+              ( Constant P.None,
+                [ FunctionDef
+                    name
+                    (Arguments [] (map (\x -> Arg x Nothing Nothing) args) Nothing [] [] Nothing [])
+                    body'
+                    []
+                    Nothing
+                    Nothing
+                ]
+              )
+        )
+          <$> pSymbol <*> pList pSymbol <*> many (withPrefStmt <$> pTrans)
       ),
       ( "import",
         fromStmt
