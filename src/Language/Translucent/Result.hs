@@ -53,5 +53,5 @@ comb a b = WriterT $ do
   (e1, s1) <- runWriterT a
   (e2, s2) <- runWriterT b
   return (e2, s1 ++ rmUnnecessary e1 ++ s2)
-    where rmUnnecessary (Constant None) = []
+    where rmUnnecessary (Constant _) = []
           rmUnnecessary x = [Expr x]

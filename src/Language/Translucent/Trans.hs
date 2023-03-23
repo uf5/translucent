@@ -128,8 +128,9 @@ forms =
       -- set & walrus
       ( "set!",
         ( \name value -> do
+            name' <- mangle name
             value' <- value
-            fromStmt $ P.Assign [P.Name name P.Store] value' Nothing
+            fromStmt $ P.Assign [P.Name name' P.Store] value' Nothing
         )
           <$> pSymbol <*> pTrans
       ),
