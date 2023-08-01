@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 {-# HLINT ignore "Use <$" #-}
 module Parser (Parser.parse) where
 
@@ -30,15 +31,15 @@ pString = T.String . toText <$> between (char '"') (char '"') (M.many stringElem
     stringElem = escapeSeq <|> anySingleBut '"'
     escapeSeq = char '\\' *> choice (map (\(from, to) -> pure to <$> char from) escapeChars)
     escapeChars =
-      [ ('\\', '\\'),
-        ('\"', '\"'),
-        ('a', '\a'),
-        ('b', '\b'),
-        ('f', '\f'),
-        ('n', '\n'),
-        ('r', '\r'),
-        ('t', '\t'),
-        ('v', '\v')
+      [ ('\\', '\\')
+      , ('\"', '\"')
+      , ('a', '\a')
+      , ('b', '\b')
+      , ('f', '\f')
+      , ('n', '\n')
+      , ('r', '\r')
+      , ('t', '\t')
+      , ('v', '\v')
       ]
 
 pLists :: Parser T.Lisp
@@ -46,9 +47,9 @@ pLists = choice (map genParser listOfParens)
   where
     genParser (cOpen, cClose, constructor) = constructor <$> between (char cOpen) (char cClose) (sepBy pExpr sc)
     listOfParens =
-      [ ('(', ')', T.SExp),
-        ('[', ']', T.List),
-        ('{', '}', T.Dict)
+      [ ('(', ')', T.SExp)
+      , ('[', ']', T.List)
+      , ('{', '}', T.Dict)
       ]
 
 pExpr :: Parser T.Lisp
