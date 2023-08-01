@@ -1,0 +1,9 @@
+dist
+dist-*
+cabal.project.local
+cabal.project.local~
+
+result
+result-*
+
+.direnv
