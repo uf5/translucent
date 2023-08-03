@@ -26,3 +26,11 @@ pushRet x = do
     _ -> do
       pushExpr currentRet
       setRet x
+
+consume :: Codegen () -> Codegen Expression
+consume m = do
+  let s = execState (runCodegen m) initialState
+  let consumedBody = s ^. (block % stmts)
+  pushStmts consumedBody
+  let consumedExpr = s ^. (block % expr)
+  pure consumedExpr

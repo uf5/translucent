@@ -55,10 +55,10 @@ pLists = choice (map genParser listOfParens)
 pExpr :: Parser T.Lisp
 pExpr = choice [pInt, pFloat, pString, pSymbol, pKeyword, pLists] <?> "Expression"
 
-pProgram :: Parser [T.Lisp]
-pProgram = sepBy pExpr sc
+pProgram :: Parser T.Lisp
+pProgram = pExpr
 
-parse :: Text -> Either Text [T.Lisp]
+parse :: Text -> Either Text T.Lisp
 parse prog = case runParser pProgram "stdin" prog of
   (Left bundle) -> Left (toText (errorBundlePretty bundle))
   (Right v) -> Right v

@@ -11,7 +11,7 @@ pickName x = get >>= (dispatchName . view names)
   where
     dispatchName :: Map Text Text -> Codegen Text
     dispatchName nms = case lookup x nms of
-      (Just n) -> return n
+      (Just n) -> pure n
       Nothing -> do
         let mangledName =
               if isValidPythonIdent x
@@ -19,7 +19,7 @@ pickName x = get >>= (dispatchName . view names)
                 else mangle x (length nms)
         let newMap = insert x mangledName nms
         assign names newMap
-        return mangledName
+        pure mangledName
 
 -- TODO: generate names that resemble their original names
 -- example: this-is-a-test -> this_is_a_test
