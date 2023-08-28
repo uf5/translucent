@@ -59,7 +59,9 @@ common shared
     ViewPatterns
 
   build-depends:
+    , aeson
     , base        >=4.13.0.0 && <4.18.0.0.0
+    , bytestring
     , containers
     , megaparsec
     , mtl
@@ -74,10 +76,11 @@ executable translucent
   import:        shared
   main-is:       Main.hs
   other-modules:
-    Codegen
-    Codegen.Blocks
-    Codegen.Codegen
-    Codegen.Mangler
     Lisp
     Parser
-    PythonAst
+    Python
+    Transpiler
+    Transpiler.Block
+    Transpiler.Mangler
+    Transpiler.Monad
+    Transpiler.Translation

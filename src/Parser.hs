@@ -3,6 +3,8 @@
 {-# HLINT ignore "Use <$" #-}
 module Parser (Parser.parse) where
 
+import Prelude as P
+
 import Lisp qualified as T
 import Text.Megaparsec as M
 import Text.Megaparsec.Char as M
@@ -13,19 +15,19 @@ type Parser = Parsec Void Text
 sc :: Parser ()
 sc = L.space space1 (L.skipLineComment ";") empty
 
-pInt :: Parser T.Lisp
+pInt :: Parser T.Lisp'
 pInt = T.Int <$> L.signed empty L.decimal
 
-pFloat :: Parser T.Lisp
+pFloat :: Parser T.Lisp'
 pFloat = T.Float <$> L.signed empty L.float
 
-pSymbol :: Parser T.Lisp
+pSymbol :: Parser T.Lisp'
 pSymbol = T.Symbol . toText <$> M.some letterChar
 
-pKeyword :: Parser T.Lisp
+pKeyword :: Parser T.Lisp'
 pKeyword = T.Keyword . toText <$> (char ':' *> M.some letterChar)
 
-pString :: Parser T.Lisp
+pString :: Parser T.Lisp'
 pString = T.String . toText <$> between (char '"') (char '"') (M.many stringElem)
   where
     stringElem = escapeSeq <|> anySingleBut '"'
@@ -42,7 +44,7 @@ pString = T.String . toText <$> between (char '"') (char '"') (M.many stringElem
       , ('v', '\v')
       ]
 
-pLists :: Parser T.Lisp
+pLists :: Parser T.Lisp'
 pLists = choice (map genParser listOfParens)
   where
     genParser (cOpen, cClose, constructor) = constructor <$> between (char cOpen) (char cClose) (sepBy pExpr sc)
@@ -53,12 +55,27 @@ pLists = choice (map genParser listOfParens)
       ]
 
 pExpr :: Parser T.Lisp
-pExpr = choice [pInt, pFloat, pString, pSymbol, pKeyword, pLists] <?> "Expression"
+pExpr =
+  wrapLocation
+    ( choice
+        [ pInt
+        , pFloat
+        , pString
+        , pSymbol
+        , pKeyword
+        , pLists
+        ]
+    )
+    <?> "Expression"
+  where
+    wrapLocation :: Parser T.Lisp' -> Parser T.Lisp
+    wrapLocation parser = do
+      o <- getOffset
+      p <- parser
+      pure (p, o)
 
 pProgram :: Parser T.Lisp
 pProgram = pExpr
 
-parse :: Text -> Either Text T.Lisp
-parse prog = case runParser pProgram "stdin" prog of
-  (Left bundle) -> Left (toText (errorBundlePretty bundle))
-  (Right v) -> Right v
+parse :: Text -> Either (ParseErrorBundle Text Void) T.Lisp
+parse = runParser pProgram "stdin"

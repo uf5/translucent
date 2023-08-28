@@ -1,35 +1,35 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
-module PythonAst where
+module Python where
 
-import Data.Text
-import Prelude hiding (Const)
+-- See <https://docs.python.org/3/library/ast.html>
 
--- See <https://docs.python.org/3/library/ast.html> for more information
+import Data.Aeson qualified as J
+import Data.Char (toLower)
 
 data Module = Module {_body :: [Statement], _type_ignores :: [Text]}
-  deriving (Eq, Show, Generic)
+  deriving (Show, Generic)
 
 data Keyword = Keyword
   { arg :: Text
   , value :: Expression
   }
-  deriving (Eq, Show, Generic)
+  deriving (Show, Generic)
 
 data Alias = Alias
   { _name :: Text
   , _asname :: Maybe Text
   }
-  deriving (Eq, Show, Generic)
+  deriving (Show, Generic)
 
-data Const
+data Constant
   = None
   | Bool Bool
   | Int Integer
   | Float Float
   | String Text
-  deriving (Eq, Show, Generic)
+  deriving (Show, Generic)
 
 data Statement
   = Expr {_value :: Expression}
@@ -56,10 +56,10 @@ data Statement
       { _names :: [Alias]
       }
   | Pass
-  deriving (Eq, Show, Generic)
+  deriving (Show, Generic)
 
 data Expression
-  = Constant {_value :: Const}
+  = Constant {_value :: Constant}
   | Name {_id :: Text, _ctx :: ExpressionContext}
   | NamedExpr {_target :: Expression, value :: Expression}
   | BinOp
@@ -81,13 +81,13 @@ data Expression
   | Tuple {_elts :: [Expression], _ctx :: ExpressionContext}
   | IfExp {_test :: Expression, _body :: Expression, _orelse :: Expression}
   | Dict {_keys :: [Expression], _values :: [Expression]}
-  deriving (Eq, Show, Generic)
+  deriving (Show, Generic)
 
 data Arguments = Arguments {_posonlyargs :: [Arg], _args :: [Arg], _vararg :: Maybe Arg, _kwonlyargs :: [Arg], _kw_defaults :: [Expression], _kwarg :: Maybe Arg, _defaults :: [Expression]}
-  deriving (Eq, Show, Generic)
+  deriving (Show, Generic)
 
 data Arg = Arg {_arg :: Text, _annotation :: Maybe Expression, _type_comment :: Maybe Text}
-  deriving (Eq, Show, Generic)
+  deriving (Show, Generic)
 
 data BinaryOperator
   = Add
@@ -103,7 +103,7 @@ data BinaryOperator
   | BitXor
   | BitAnd
   | FloorDiv
-  deriving (Eq, Show, Generic)
+  deriving (Show, Generic)
 
 data CmpOp
   = Eq
@@ -116,7 +116,59 @@ data CmpOp
   | IsNot
   | In
   | NotIn
-  deriving (Eq, Show, Generic)
+  deriving (Show, Generic)
 
 data ExpressionContext = Load | Store | Del
-  deriving (Eq, Show, Generic)
+  deriving (Show, Generic)
+
+-- JSON
+
+jsonOpts :: J.Options
+jsonOpts =
+  J.defaultOptions
+    { J.tagSingleConstructors = True
+    , J.allNullaryToStringTag = False
+    , J.fieldLabelModifier = stripUnderscore
+    }
+  where
+    stripUnderscore = dropWhile (== '_')
+
+jsonOptsLower :: J.Options
+jsonOptsLower = jsonOpts {J.constructorTagModifier = map toLower}
+
+instance J.ToJSON Constant where
+  toJSON None = J.Null
+  toJSON (Python.Bool x) = J.toJSON x
+  toJSON (Python.Int x) = J.toJSON x
+  toJSON (Python.Float x) = J.toJSON x
+  toJSON (Python.String x) = J.toJSON x
+
+instance J.ToJSON Expression where
+  toEncoding = J.genericToEncoding jsonOpts
+
+instance J.ToJSON Statement where
+  toEncoding = J.genericToEncoding jsonOpts
+
+instance J.ToJSON Module where
+  toEncoding = J.genericToEncoding jsonOpts
+
+instance J.ToJSON Keyword where
+  toEncoding = J.genericToEncoding jsonOptsLower
+
+instance J.ToJSON Alias where
+  toEncoding = J.genericToEncoding jsonOptsLower
+
+instance J.ToJSON Arguments where
+  toEncoding = J.genericToEncoding jsonOptsLower
+
+instance J.ToJSON Arg where
+  toEncoding = J.genericToEncoding jsonOptsLower
+
+instance J.ToJSON ExpressionContext where
+  toEncoding = J.genericToEncoding jsonOpts
+
+instance J.ToJSON BinaryOperator where
+  toEncoding = J.genericToEncoding jsonOpts
+
+instance J.ToJSON CmpOp where
+  toEncoding = J.genericToEncoding jsonOpts

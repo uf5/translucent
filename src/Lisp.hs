@@ -1,6 +1,10 @@
-module Lisp (Lisp (..)) where
+module Lisp (Location, Lisp, Lisp' (..)) where
 
-data Lisp
+type Location = Int
+
+type Lisp = (Lisp', Location)
+
+data Lisp'
   = None
   | Int Integer
   | Float Float
