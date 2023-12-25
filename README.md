@@ -1,5 +1,5 @@
 # Translucent
-WIP Lisp -> Python transpiler.
+Translucent is a Lisp to Python transpiler written in Haskell.
 Please note that this is a rewrite branch. For the old version (which has more features but has slightly uglier code) go visit the "master" branch.
 ## Note
 The transpiler itself translates Lisp code into [Python AST](https://docs.python.org/3/library/ast.html). Then it serializes the resulting AST into JSON, which can then be used to reconstruct the Python program.
