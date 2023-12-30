@@ -13,6 +13,7 @@ module Language.Translucent.TransM (
   mangle,
   extract,
   evalTranspiler,
+  gets,
   module E,
 )
 where

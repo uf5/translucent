@@ -13,14 +13,14 @@ data Module = Module {_body :: [Statement], _type_ignores :: [String]}
   deriving (Show, Generic)
 
 data Keyword = Keyword
-  { arg :: String
-  , value :: Expression
+  { arg :: String,
+    value :: Expression
   }
   deriving (Show, Generic)
 
 data Alias = Alias
-  { _name :: String
-  , _asname :: Maybe String
+  { _name :: String,
+    _asname :: Maybe String
   }
   deriving (Show, Generic)
 
@@ -36,22 +36,22 @@ data Statement
   = Expr {_value :: Expression}
   | Return {_value :: Expression}
   | If
-      { _test :: Expression
-      , _body :: [Statement]
-      , _orelse :: [Statement]
+      { _test :: Expression,
+        _body :: [Statement],
+        _orelse :: [Statement]
       }
   | Assign
-      { _targets :: [Expression]
-      , _value :: Expression
-      , _type_comment :: Maybe String
+      { _targets :: [Expression],
+        _value :: Expression,
+        _type_comment :: Maybe String
       }
   | FunctionDef
-      { _name :: String
-      , _args :: Arguments
-      , _body :: [Statement]
-      , _decorator_list :: [Expression]
-      , _returns :: Maybe Expression
-      , _type_comment :: Maybe String
+      { _name :: String,
+        _args :: Arguments,
+        _body :: [Statement],
+        _decorator_list :: [Expression],
+        _returns :: Maybe Expression,
+        _type_comment :: Maybe String
       }
   | Import
       { _names :: [Alias]
@@ -64,19 +64,19 @@ data Expression
   | Name {_id :: String, _ctx :: ExpressionContext}
   | NamedExpr {_target :: Expression, value :: Expression}
   | BinOp
-      { _left :: Expression
-      , _op :: BinaryOperator
-      , _right :: Expression
+      { _left :: Expression,
+        _op :: BinaryOperator,
+        _right :: Expression
       }
   | Compare
-      { _left :: Expression
-      , _ops :: [CmpOp]
-      , _comparators :: [Expression]
+      { _left :: Expression,
+        _ops :: [CmpOp],
+        _comparators :: [Expression]
       }
   | Call
-      { _func :: Expression
-      , _args :: [Expression]
-      , _keywords :: [Keyword]
+      { _func :: Expression,
+        _args :: [Expression],
+        _keywords :: [Keyword]
       }
   | List {_elts :: [Expression], _ctx :: ExpressionContext}
   | Tuple {_elts :: [Expression], _ctx :: ExpressionContext}
@@ -127,9 +127,9 @@ data ExpressionContext = Load | Store | Del
 jsonOpts :: J.Options
 jsonOpts =
   J.defaultOptions
-    { J.tagSingleConstructors = True
-    , J.allNullaryToStringTag = False
-    , J.fieldLabelModifier = stripUnderscore
+    { J.tagSingleConstructors = True,
+      J.allNullaryToStringTag = False,
+      J.fieldLabelModifier = stripUnderscore
     }
   where
     stripUnderscore = dropWhile (== '_')

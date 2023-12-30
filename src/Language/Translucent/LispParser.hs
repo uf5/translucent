@@ -32,8 +32,8 @@ sc =
   void $
     many $
       choice
-        [ oneOf " \n\r\t"
-        , char ';' <* many (satisfy ('\n' /=))
+        [ oneOf " \n\r\t",
+          char ';' <* many (satisfy ('\n' /=))
         ]
 
 allowedChar :: PC Char
@@ -86,15 +86,15 @@ pString = String <$> (char '"' *> many stringChar <* char '"')
       choice
         ( map
             (\(c, c') -> c' <$ char c)
-            [ ('\\', '\\')
-            , ('\"', '\"')
-            , ('a', '\a')
-            , ('b', '\b')
-            , ('f', '\f')
-            , ('n', '\n')
-            , ('r', '\r')
-            , ('t', '\t')
-            , ('v', '\v')
+            [ ('\\', '\\'),
+              ('\"', '\"'),
+              ('a', '\a'),
+              ('b', '\b'),
+              ('f', '\f'),
+              ('n', '\n'),
+              ('r', '\r'),
+              ('t', '\t'),
+              ('v', '\v')
             ]
         )
 
@@ -102,24 +102,24 @@ pSExp :: PC Lisp
 pSExp = SExp <$> (char '(' *> some pExpr <* char ')')
 
 pBrackets :: PC Lisp
-pBrackets = Brackets <$> (char '[' *> some pExpr <* char ']')
+pBrackets = Brackets <$> (char '[' *> many pExpr <* char ']')
 
 pBraces :: PC Lisp
-pBraces = Braces <$> (char '{' *> some pExpr <* char '}')
+pBraces = Braces <$> (char '{' *> many pExpr <* char '}')
 
 pExpr :: PC Lisp'
 pExpr =
   wrap $
     choice
-      [ pFloat
-      , pInt
-      , pSExp
-      , pBrackets
-      , pBraces
-      , pString
-      , pNone
-      , pBool
-      , pSymbol
+      [ pFloat,
+        pInt,
+        pSExp,
+        pBrackets,
+        pBraces,
+        pString,
+        pNone,
+        pBool,
+        pSymbol
       ]
       <* sc
   where

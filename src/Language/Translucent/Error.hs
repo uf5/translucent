@@ -14,4 +14,4 @@ instance Show GeneralError where
   show (GeneralError m (Location l)) = m <> " at " <> show l
 
 displayErrorInCode :: GeneralError -> String -> String
-displayErrorInCode e source = undefined
+displayErrorInCode _ _ = undefined
