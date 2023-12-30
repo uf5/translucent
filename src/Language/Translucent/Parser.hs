@@ -2,36 +2,50 @@
 
 {-# HLINT ignore "Use lambda-case" #-}
 
-module Language.Translucent.Parser
-  ( module A,
-    Location,
-    Parser (..),
-    ParseError (..),
-    ParseError' (..),
-    getLocation,
-    satisfy,
-    char,
-    oneOf,
-    noneOf,
-    choice,
-    eof,
-    runParser
-  )
+module Language.Translucent.Parser (
+  module A,
+  RLocation (..),
+  Parser (..),
+  ParseError (..),
+  ParseError' (..),
+  pe2ge,
+  getRLocation,
+  satisfy,
+  char,
+  str,
+  oneOf,
+  noneOf,
+  choice,
+  count,
+  eof,
+  runParser,
+)
 where
 
 import Control.Applicative
-import Control.Applicative as A (many, some, optional)
-import Control.Monad (when)
+import Control.Applicative as A (Alternative (..), many, optional, some)
+import Control.Monad (replicateM, when)
+import Language.Translucent.Error (GeneralError (..), Location (..))
 
-newtype Location = Location Int
+-- Right to left location
+newtype RLocation = RLocation Int
 
 data ParseError' i = ParseError'
-  { err :: ParseError i,
-    loc :: Location
+  { err :: ParseError i
+  , loc :: RLocation
   }
 
+pe2ge :: (Show i) => Int -> ParseError' i -> GeneralError
+pe2ge
+  sourceLength
+  ( ParseError'
+      { err = e
+      , loc = (RLocation rl)
+      }
+    ) = GeneralError (show e) (Location (sourceLength - rl))
+
 instance (Show i) => Show (ParseError' i) where
-  show ParseError' {err=e, loc=(Location l)} = show e <> " at -" <> show l
+  show ParseError' {err = e} = show e
 
 data ParseError i
   = Unexpected i
@@ -62,7 +76,7 @@ instance Monad (Parser i) where
 
 instance Alternative (Parser i) where
   empty = do
-    l <- getLocation
+    l <- getRLocation
     Parser (const (Left (ParseError' Empty l)))
   Parser a <|> Parser b = Parser $ \inp ->
     case (a inp, b inp) of
@@ -71,12 +85,12 @@ instance Alternative (Parser i) where
       (l@(Left _), Left _) -> l
 
 -- Get the current position within the source list. Keep in mind that this position is equal to the index counted from the end of the list.
-getLocation :: Parser i Location
-getLocation = Parser $ \inp -> pure (Location (length inp), inp)
+getRLocation :: Parser i RLocation
+getRLocation = Parser $ \inp -> pure (RLocation (length inp), inp)
 
 satisfy :: (i -> Bool) -> Parser i i
 satisfy predicate = do
-  l <- getLocation
+  l <- getRLocation
   Parser $ \inp -> case inp of
     [] -> Left (ParseError' EOF l)
     hd : rest
@@ -85,6 +99,9 @@ satisfy predicate = do
 
 char :: Eq i => i -> Parser i i
 char c = satisfy (c ==)
+
+str :: (Traversable t, Eq i) => t i -> Parser i (t i)
+str = mapM char
 
 oneOf :: (Foldable f, Eq i) => f i -> Parser i i
 oneOf elts = satisfy (`elem` elts)
@@ -95,9 +112,12 @@ noneOf elts = satisfy (not . (`elem` elts))
 choice :: Foldable f => f (Parser i a) -> Parser i a
 choice = foldl1 (<|>)
 
+count :: Int -> Parser i a -> Parser i [a]
+count = replicateM
+
 eof :: Parser i ()
 eof = do
-  l@(Location n) <- getLocation
+  l@(RLocation n) <- getRLocation
   when (n /= 0) (Parser (const (Left (ParseError' ExpectedEOF l))))
 
 runParser :: Parser i a -> [i] -> Either (ParseError' i) a
