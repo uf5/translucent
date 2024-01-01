@@ -2,6 +2,9 @@ module Main where
 
 import Language.Translucent
 import Language.Translucent.Python qualified as P
+import Data.Aeson (encode)
+import Data.ByteString.Lazy.Char8 qualified as B
+import System.IO (stderr, hPutStrLn)
 
 mapLeft :: (a -> b) -> Either a c -> Either b c
 mapLeft f = either (Left . f) Right
@@ -15,5 +18,5 @@ main :: IO ()
 main = do
   prog <- getContents
   case compile prog of
-    Left err -> putStrLn (displayErrorInCode prog err)
-    Right x -> print x
+    Left err -> hPutStrLn stderr (displayErrorInCode prog err)
+    Right x -> B.putStrLn (encode (P.Module x []))

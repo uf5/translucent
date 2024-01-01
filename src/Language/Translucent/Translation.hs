@@ -11,10 +11,10 @@ translate (L.Lisp' (L.Float v) _) = pushExpr (P.Constant (P.Float v))
 translate (L.Lisp' (L.String v) _) = pushExpr (P.Constant (P.String v))
 translate (L.Lisp' (L.Symbol name) _) = do
   name' <- mangle name
-  pushExpr P.Name {P._ctx = P.Store, P._id = name'}
+  pushExpr P.Name {P._ctx = P.Load, P._id = name'}
 translate (L.Lisp' (L.Brackets elts) _) = do
   elts' <- mapM transElem elts
-  pushExpr P.List {P._elts = elts', P._ctx = P.Store}
+  pushExpr P.List {P._elts = elts', P._ctx = P.Load}
   where
     transElem :: L.Lisp' -> TransM P.Expression
     transElem x = do
