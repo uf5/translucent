@@ -6,7 +6,6 @@ module Language.Translucent.TransM (
   initialState,
   TranspilerError (..),
   TranspilerError' (..),
-  te2ge,
   TransM (..),
   pushStmt,
   pushExpr,
@@ -23,9 +22,7 @@ import Control.Monad.Except as E (throwError)
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.State
 import Data.Char qualified as C
-import Language.Translucent.Error
 import Language.Translucent.Lisp qualified as L
-import Language.Translucent.Parser (RLocation (..))
 import Language.Translucent.Python qualified as P
 
 data BlockContext
@@ -59,17 +56,8 @@ data TranspilerError
 
 data TranspilerError' = TranspilerError'
   { err :: TranspilerError,
-    loc :: L.RLocation
+    loc :: L.Location
   }
-
-te2ge :: Int -> TranspilerError' -> GeneralError
-te2ge
-  sourceLength
-  ( TranspilerError'
-      { err = e,
-        loc = (RLocation rl)
-      }
-    ) = GeneralError (show e) (Location (sourceLength - rl))
 
 instance Show TranspilerError' where
   show (TranspilerError' {err = e}) = show e

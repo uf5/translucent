@@ -22,7 +22,7 @@ data Lisp
   | Braces [Lisp']
   deriving (Show)
 
-data Lisp' = Lisp' Lisp RLocation
+data Lisp' = Lisp' Lisp Location
 
 instance Show Lisp' where
   show (Lisp' v _) = show v
@@ -124,7 +124,7 @@ pExpr =
       <* sc
   where
     wrap p = do
-      l <- getRLocation
+      l <- getLocation
       v <- p
       pure (Lisp' v l)
 

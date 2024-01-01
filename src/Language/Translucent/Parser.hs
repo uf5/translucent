@@ -4,12 +4,12 @@
 
 module Language.Translucent.Parser (
   module A,
-  RLocation (..),
+  Location (..),
+  ParserState (..),
   Parser (..),
   ParseError (..),
   ParseError' (..),
-  pe2ge,
-  getRLocation,
+  getLocation,
   satisfy,
   char,
   str,
@@ -25,24 +25,13 @@ where
 import Control.Applicative
 import Control.Applicative as A (Alternative (..), many, optional, some)
 import Control.Monad (replicateM, when)
-import Language.Translucent.Error (GeneralError (..), Location (..))
 
--- Right to left location
-newtype RLocation = RLocation Int
+newtype Location = Location Int
 
 data ParseError' i = ParseError'
-  { err :: ParseError i
-  , loc :: RLocation
+  { err :: ParseError i,
+    loc :: Location
   }
-
-pe2ge :: (Show i) => Int -> ParseError' i -> GeneralError
-pe2ge
-  sourceLength
-  ( ParseError'
-      { err = e
-      , loc = (RLocation rl)
-      }
-    ) = GeneralError (show e) (Location (sourceLength - rl))
 
 instance (Show i) => Show (ParseError' i) where
   show ParseError' {err = e} = show e
@@ -54,7 +43,14 @@ data ParseError i
   | Empty
   deriving (Show)
 
-newtype Parser i a = Parser {runParser' :: [i] -> Either (ParseError' i) (a, [i])}
+data ParserState i = ParserState
+  { source :: [i],
+    initialSourceLength :: Int
+  }
+
+newtype Parser i a = Parser
+  { runParser' :: ParserState i -> Either (ParseError' i) (a, ParserState i)
+  }
 
 instance Functor (Parser i) where
   fmap f (Parser p) = Parser $ \inp -> do
@@ -76,7 +72,7 @@ instance Monad (Parser i) where
 
 instance Alternative (Parser i) where
   empty = do
-    l <- getRLocation
+    l <- getLocation
     Parser (const (Left (ParseError' Empty l)))
   Parser a <|> Parser b = Parser $ \inp ->
     case (a inp, b inp) of
@@ -84,17 +80,22 @@ instance Alternative (Parser i) where
       (Left _, r@(Right _)) -> r
       (l@(Left _), Left _) -> l
 
--- Get the current position within the source list. Keep in mind that this position is equal to the index counted from the end of the list.
-getRLocation :: Parser i RLocation
-getRLocation = Parser $ \inp -> pure (RLocation (length inp), inp)
+gets :: (ParserState i -> b) -> Parser i b
+gets fn = Parser $ \s -> pure (fn s, s)
+
+getLocation :: Parser i Location
+getLocation = do
+  src <- gets source
+  isl <- gets initialSourceLength
+  pure (Location (isl - length src))
 
 satisfy :: (i -> Bool) -> Parser i i
 satisfy predicate = do
-  l <- getRLocation
-  Parser $ \inp -> case inp of
+  l <- getLocation
+  Parser $ \s@ParserState {source = inp} -> case inp of
     [] -> Left (ParseError' EOF l)
     hd : rest
-      | predicate hd -> Right (hd, rest)
+      | predicate hd -> Right (hd, s {source = rest})
       | otherwise -> Left (ParseError' (Unexpected hd) l)
 
 char :: Eq i => i -> Parser i i
@@ -117,8 +118,9 @@ count = replicateM
 
 eof :: Parser i ()
 eof = do
-  l@(RLocation n) <- getRLocation
-  when (n /= 0) (Parser (const (Left (ParseError' ExpectedEOF l))))
+  isl <- gets initialSourceLength
+  l@(Location l') <- getLocation
+  when (l' /= isl) (Parser (const (Left (ParseError' ExpectedEOF l))))
 
 runParser :: Parser i a -> [i] -> Either (ParseError' i) a
-runParser p source = fst <$> runParser' (p <* eof) source
+runParser p input = fst <$> runParser' (p <* eof) ParserState {source = input, initialSourceLength = length input}
