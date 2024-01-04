@@ -13,6 +13,7 @@ module Language.Translucent.TransM (
   extract,
   evalTranspiler,
   gets,
+  toEx,
   module E,
 )
 where
@@ -22,6 +23,7 @@ import Control.Monad.Except as E (throwError)
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.State
 import Data.Char qualified as C
+import Language.Translucent.Form (FormApplicationError (..))
 import Language.Translucent.Lisp qualified as L
 import Language.Translucent.Python qualified as P
 
@@ -52,6 +54,7 @@ initialState =
 data TranspilerError
   = UnexpectedExpression
   | NotYetImplemented
+  | FormApplicationError FormApplicationError
   deriving (Show)
 
 data TranspilerError' = TranspilerError'
@@ -123,6 +126,13 @@ extract = do
   s <- gets stmts
   e <- gets expr
   pure (s, e)
+
+toEx :: TransM () -> TransM P.Expression
+toEx x = do
+  x
+  e <- gets expr
+  modify (\s -> s {expr = P.Constant P.None})
+  pure e
 
 evalTranspiler :: TransM a -> TranspilerState -> Either TranspilerError' a
 evalTranspiler t s =

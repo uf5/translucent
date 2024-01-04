@@ -1,10 +1,10 @@
 module Main where
 
-import Language.Translucent
-import Language.Translucent.Python qualified as P
 import Data.Aeson (encode)
 import Data.ByteString.Lazy.Char8 qualified as B
-import System.IO (stderr, hPutStrLn)
+import Language.Translucent
+import Language.Translucent.Python qualified as P
+import System.IO (hPutStrLn, stderr)
 
 mapLeft :: (a -> b) -> Either a c -> Either b c
 mapLeft f = either (Left . f) Right

@@ -31,7 +31,6 @@ executable translucent
     Language.Translucent.Form
     Language.Translucent.Lisp
     Language.Translucent.LispParser
-    Language.Translucent.Mangler
     Language.Translucent.Parser
     Language.Translucent.Python
     Language.Translucent.Translation

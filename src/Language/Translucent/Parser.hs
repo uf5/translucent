@@ -1,7 +1,3 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
-{-# HLINT ignore "Use lambda-case" #-}
-
 module Language.Translucent.Parser (
   module A,
   Location (..),
@@ -15,7 +11,6 @@ module Language.Translucent.Parser (
   str,
   oneOf,
   noneOf,
-  choice,
   count,
   eof,
   runParser,
@@ -74,11 +69,7 @@ instance Alternative (Parser i) where
   empty = do
     l <- getLocation
     Parser (const (Left (ParseError' Empty l)))
-  Parser a <|> Parser b = Parser $ \inp ->
-    case (a inp, b inp) of
-      (r@(Right _), _) -> r
-      (Left _, r@(Right _)) -> r
-      (l@(Left _), Left _) -> l
+  Parser a <|> Parser b = Parser $ \inp -> a inp <> b inp
 
 gets :: (ParserState i -> b) -> Parser i b
 gets fn = Parser $ \s -> pure (fn s, s)
@@ -95,7 +86,7 @@ satisfy predicate = do
   Parser $ \s@ParserState {source = inp} -> case inp of
     [] -> Left (ParseError' EOF l)
     hd : rest
-      | predicate hd -> Right (hd, s {source = rest})
+      | predicate hd -> pure (hd, s {source = rest})
       | otherwise -> Left (ParseError' (Unexpected hd) l)
 
 char :: Eq i => i -> Parser i i
@@ -109,9 +100,6 @@ oneOf elts = satisfy (`elem` elts)
 
 noneOf :: (Foldable f, Eq i) => f i -> Parser i i
 noneOf elts = satisfy (not . (`elem` elts))
-
-choice :: Foldable f => f (Parser i a) -> Parser i a
-choice = foldl1 (<|>)
 
 count :: Int -> Parser i a -> Parser i [a]
 count = replicateM

@@ -4,7 +4,7 @@ module Language.Translucent.LispParser (Lisp (..), Lisp' (..), parseProgram) whe
 
 import Control.Monad (void)
 import Data.Char qualified as C
-import Data.List (singleton)
+import Data.List (foldl1', singleton)
 import Language.Translucent.Parser
 
 type PC a = Parser Char a
@@ -31,7 +31,8 @@ sc :: PC ()
 sc =
   void $
     many $
-      choice
+      foldl1'
+        (<|>)
         [ oneOf " \n\r\t",
           char ';' <* many (satisfy ('\n' /=))
         ]
@@ -75,15 +76,16 @@ pString :: PC Lisp
 pString = String <$> (char '"' *> many stringChar <* char '"')
   where
     stringChar = escapeSeq <|> noneOf "\""
-    escapeSeq = char '\\' *> choice [escapeChars, hex16Char, hex32Char]
+    escapeSeq = char '\\' *> foldl1' (<|>) [escapeChars, hex16Char, hex32Char]
     hex16Char = C.chr . hexIntList2Int <$> (char 'u' *> count 4 hexElem)
     hex32Char = C.chr . hexIntList2Int <$> (char 'U' *> count 8 hexElem)
-    hexElem = choice (zipWith (\c n -> n <$ char c) "0123456789abcdef" [0 .. 15])
+    hexElem = foldl1' (<|>) (zipWith (\c n -> n <$ char c) "0123456789abcdef" [0 .. 15])
     hexIntList2Int :: [Int] -> Int
     hexIntList2Int (h : t) = (h * (16 ^ length t)) + hexIntList2Int t
     hexIntList2Int [] = 0
     escapeChars =
-      choice
+      foldl1'
+        (<|>)
         ( map
             (\(c, c') -> c' <$ char c)
             [ ('\\', '\\'),
@@ -110,7 +112,8 @@ pBraces = Braces <$> (char '{' *> many pExpr <* char '}')
 pExpr :: PC Lisp'
 pExpr =
   wrap $
-    choice
+    foldl1'
+      (<|>)
       [ pFloat,
         pInt,
         pSExp,
