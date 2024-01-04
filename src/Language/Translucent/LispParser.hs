@@ -15,8 +15,8 @@ data Lisp
   | Int Integer
   | Float Float
   | String String
-  | Symbol String
   | Keyword String
+  | Symbol String
   | SExp [Lisp']
   | Brackets [Lisp']
   | Braces [Lisp']
@@ -38,7 +38,7 @@ sc =
         ]
 
 allowedChar :: PC Char
-allowedChar = noneOf " \n\r\t\"\\#,;()[]{}"
+allowedChar = noneOf " \n\r\t\"\\#,:;()[]{}"
 
 sign :: PC (Maybe Char)
 sign = optional (char '-')
@@ -71,6 +71,9 @@ pFloat =
 
 pSymbol :: PC Lisp
 pSymbol = Symbol <$> some allowedChar
+
+pKeyword :: PC Lisp
+pKeyword = Keyword <$> (char ':' *> some allowedChar)
 
 pString :: PC Lisp
 pString = String <$> (char '"' *> many stringChar <* char '"')
@@ -122,6 +125,7 @@ pExpr =
         pString,
         pNone,
         pBool,
+        pKeyword,
         pSymbol
       ]
       <* sc

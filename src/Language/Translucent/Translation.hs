@@ -107,8 +107,35 @@ translate (L.Lisp' (L.SExp (hd : rest)) l) =
     asCall :: TransM ()
     asCall = do
       fn <- toEx (translate hd)
-      args' <- mapM (toEx . translate) rest
-      pushExpr (P.Call {P._func = fn, P._args = args', P._keywords = []})
+      (args, kwargs) <-
+        either
+          (\e -> throwError (TranspilerError' (FormApplicationError e) l))
+          transArgsKwargs
+          (applyArgs fnForm rest)
+      pushExpr (P.Call {P._func = fn, P._args = args, P._keywords = map (uncurry P.Keyword) kwargs})
+    fnForm :: FL ([L.Lisp'], [(String, L.Lisp')])
+    fnForm = foldl1 fnFormFoldFn <$> many (fKwarg <|> fArg)
+    fnFormFoldFn (a1, k1) (a2, k2) = (a1 ++ a2, k1 ++ k2)
+    fKwarg = do
+      k <- fKeyword
+      v <- fLisp'
+      pure ([], [(k, v)])
+    fArg = do
+      v <- fLisp'
+      pure ([v], [])
+    transArgsKwargs :: ([L.Lisp'], [(String, L.Lisp')]) -> TransM ([P.Expression], [(String, P.Expression)])
+    transArgsKwargs (args, kwargs) = do
+      args' <- mapM (toEx . translate) args
+      kwargs' <-
+        mapM
+          ( \(k, v) ->
+              ( do
+                  v' <- toEx (translate v)
+                  pure (k, v')
+              )
+          )
+          kwargs
+      pure (args', kwargs')
 translate (L.Lisp' (L.Brackets elts) _) = do
   elts' <- mapM transElem elts
   pushExpr P.List {P._elts = elts', P._ctx = P.Load}
