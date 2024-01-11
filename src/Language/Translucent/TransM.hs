@@ -53,6 +53,9 @@ initialState =
 data TranspilerError
   = UnexpectedExpression
   | NotYetImplemented
+  | NotEnoughArguments
+  | WrongType
+  | TooManyArguments
   deriving (Show)
 
 data TranspilerError' = TranspilerError'

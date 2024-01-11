@@ -21,7 +21,7 @@ import Control.Applicative
 import Control.Applicative as A (Alternative (..), many, optional, some)
 import Control.Monad (replicateM, when)
 
-newtype Location = Location Int
+newtype Location = Location {location :: Int}
 
 data ParseError' i = ParseError'
   { err :: ParseError i,

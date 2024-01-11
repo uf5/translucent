@@ -41,16 +41,18 @@
           #   };
           # };
 
-          # devShell = {
-          #  # Enabled by default
-          #  enable = true;  
-          #
-          #  # Programs you want to make available in the shell.
-          #  # Default programs can be disabled by setting to 'null'
-          #  tools = hp: { fourmolu = hp.fourmolu; ghcid = null; };
-          #
-          #  hlsCheck.enable = true;
-          # };
+          devShell = {
+            # Enabled by default
+            # enable = true;
+
+            hoogle = false;
+
+            # Programs you want to make available in the shell.
+            # Default programs can be disabled by setting to 'null'
+            # tools = hp: { fourmolu = hp.fourmolu; ghcid = null; };
+
+            # hlsCheck.enable = true;
+          };
         };
 
         treefmt.config = {

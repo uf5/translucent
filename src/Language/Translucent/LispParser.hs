@@ -22,7 +22,7 @@ data Lisp
   | Braces [Lisp']
   deriving (Show)
 
-data Lisp' = Lisp' Lisp Location
+data Lisp' = Lisp' {expr :: Lisp, loc :: Location}
 
 instance Show Lisp' where
   show (Lisp' v _) = show v
