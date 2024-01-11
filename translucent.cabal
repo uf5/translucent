@@ -12,7 +12,10 @@ common shared
     -Wunused-foralls -Wunused-foralls -fprint-explicit-foralls
     -fprint-explicit-kinds
 
-  default-extensions: ImportQualifiedPost
+  default-extensions:
+    DuplicateRecordFields
+    ImportQualifiedPost
+
   build-depends:
     , aeson
     , base        >=4.13.0.0 && <4.18.0.0.0
@@ -28,7 +31,6 @@ executable translucent
   other-modules:
     Language.Translucent
     Language.Translucent.Error
-    Language.Translucent.Form
     Language.Translucent.Lisp
     Language.Translucent.LispParser
     Language.Translucent.Parser

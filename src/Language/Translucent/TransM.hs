@@ -23,7 +23,6 @@ import Control.Monad.Except as E (throwError)
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.State
 import Data.Char qualified as C
-import Language.Translucent.Form (FormApplicationError (..))
 import Language.Translucent.Lisp qualified as L
 import Language.Translucent.Python qualified as P
 
@@ -54,7 +53,6 @@ initialState =
 data TranspilerError
   = UnexpectedExpression
   | NotYetImplemented
-  | FormApplicationError FormApplicationError
   deriving (Show)
 
 data TranspilerError' = TranspilerError'
