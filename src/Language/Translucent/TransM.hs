@@ -128,9 +128,8 @@ extract = do
   e <- gets expr
   pure (s, e)
 
-toEx :: TransM () -> TransM P.Expression
-toEx x = do
-  x
+toEx :: TransM P.Expression
+toEx = do
   e <- gets expr
   modify (\s -> s {expr = P.Constant P.None})
   pure e
